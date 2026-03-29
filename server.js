@@ -22,7 +22,7 @@ function fetchMonday(query) {
     const data = JSON.stringify({ query });
     const options = {
       hostname: 'api.monday.com',
-      path: '/v1',
+      path: '/v2',
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
