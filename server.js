@@ -1,5 +1,7 @@
 const http = require('http');
 const https = require('https');
+const fs = require('fs');
+const path = require('path');
 
 const MONDAY_TOKEN = process.env.MONDAY_TOKEN || '';
 const PORT = process.env.PORT || 3000;
@@ -22,7 +24,7 @@ function fetchMonday(query) {
     const data = JSON.stringify({ query });
     const options = {
       hostname: 'api.monday.com',
-      path: '/v2',
+      path: '/v2/',
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -58,11 +60,13 @@ const server = http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
   if (req.method === 'OPTIONS') { res.writeHead(200); res.end(); return; }
+
   if (req.url === '/data') {
     try {
       const data = await getAllData();
-      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ ok: true, data, ts: new Date().toISOString() }));
     } catch(e) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -70,7 +74,20 @@ const server = http.createServer(async (req, res) => {
     }
     return;
   }
+
   if (req.url === '/health') { res.writeHead(200); res.end('OK'); return; }
+
+  if (req.url === '/' || req.url === '/index.html') {
+    try {
+      const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(html);
+    } catch(e) {
+      res.writeHead(404); res.end('index.html not found');
+    }
+    return;
+  }
+
   res.writeHead(404); res.end('Not found');
 });
 
