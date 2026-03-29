@@ -1,1 +1,240 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>לוח בקרה — ניר</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#f4f5f7;--bg2:#ffffff;--bg3:#eef0f3;--border:#e2e5ea;
+  --text:#1a1d23;--text2:#6b7280;--text3:#9ca3af;
+  --green:#16a34a;--green-bg:#dcfce7;--green-border:#bbf7d0;
+  --blue:#2563eb;--blue-bg:#dbeafe;--blue-border:#bfdbfe;
+  --amber:#d97706;--amber-bg:#fef3c7;--amber-border:#fde68a;
+  --purple:#7c3aed;--purple-bg:#ede9fe;--purple-border:#ddd6fe;
+  --red:#dc2626;--red-bg:#fee2e2;--red-border:#fecaca;
+}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:20px 24px;}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+.header-title{font-size:20px;font-weight:700;}
+.header-sub{font-size:13px;color:var(--text2);margin-top:2px;}
+.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.live-badge{display:flex;align-items:center;gap:5px;background:var(--green-bg);border:1px solid var(--green-border);border-radius:20px;padding:4px 10px;font-size:12px;color:var(--green);}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.updated{font-size:12px;color:var(--text3);}
+.refresh-btn{background:var(--bg2);border:1px solid var(--border);color:var(--text2);padding:6px 14px;border-radius:8px;font-size:13px;cursor:pointer;font-family:'Heebo',sans-serif;}
+.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+.tab{padding:7px 16px;border-radius:8px;font-size:13px;cursor:pointer;border:1px solid var(--border);color:var(--text2);background:var(--bg2);font-family:'Heebo',sans-serif;font-weight:500;}
+.tab.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+.date-range{display:inline-flex;align-items:center;gap:6px;background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:8px;padding:5px 12px;font-size:12px;color:var(--blue);margin-bottom:16px;}
+.metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:14px;}
+.mc{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
+.mc-label{font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:500;}
+.mc-value{font-size:26px;font-weight:700;line-height:1;}
+.mc-sub{font-size:11px;margin-top:5px;font-weight:500;}
+.c-green{color:var(--green);}.c-blue{color:var(--blue);}.c-amber{color:var(--amber);}
+.c-purple{color:var(--purple);}.c-text2{color:var(--text2);}
+.row2{display:grid;grid-template-columns:1.3fr 1fr;gap:12px;margin-bottom:12px;}
+.row3{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;}
+.card-title{font-size:12px;color:var(--text2);margin-bottom:12px;font-weight:600;letter-spacing:0.3px;text-transform:uppercase;}
+.funnel{display:flex;flex-direction:column;gap:5px;}
+.funnel-step{border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:cente
+<script>
+const PROXY_URL = '/data';
+const SOURCES = [
+  {key:'אתר',             label:'אתר',       color:'#2563eb', bg:'#dbeafe'},
+  {key:'דף נחיתה פיסגה', label:'פסגה',      color:'#7c3aed', bg:'#ede9fe'},
+  {key:'voicenter',       label:'Voicenter',  color:'#d97706', bg:'#fef3c7'},
+  {key:'WhatsApp',        label:'WhatsApp',   color:'#16a34a', bg:'#dcfce7'},
+  {key:'Google',          label:'Google',     color:'#dc2626', bg:'#fee2e2'},
+  {key:'Calendly',        label:'Calendly',   color:'#0891b2', bg:'#cffafe'},
+];
+const BOARDS = {
+  leads:    {statusCol:'lead_status', sourceCol:'color_mkvd5y1g'},
+  sales:    {statusCol:'lead_status'},
+  stepup:   {statusCol:'lead_status'},
+  coaching: {statusCol:'status'},
+  sessions: {statusCol:'status'},
+};
+const ADVISORY_STATUSES = ['נקבעה שיחה','רלוונטי-העבר למכירות','פולאו-אפ','פגישת StepUp','נמכר ליווי'];
+const HE_MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+let currentRange='today', allData={};
 
+function formatDate(d){return `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;}
+function getVal(item,colId){return item.column_values?.find(c=>c.id===colId)?.text||'';}
+function filterItems(items,range){
+  const now=new Date();
+  let start;
+  if(range==='today'){start=new Date(now);start.setHours(0,0,0,0);}
+  else if(range==='week'){start=new Date(now);start.setDate(now.getDate()-now.getDay());start.setHours(0,0,0,0);}
+  else if(range==='month'){start=new Date(now.getFullYear(),now.getMonth(),1);}
+  else return items;
+  return items.filter(i=>i.created_at && new Date(i.created_at)>=start);
+}
+function getRangeLabel(range){
+  const now=new Date();
+  if(range==='today') return `היום · ${formatDate(now)}`;
+  if(range==='week'){const s=new Date(now);s.setDate(now.getDate()-now.getDay());return `${formatDate(s)} — ${formatDate(now)}`;}
+  if(range==='month'){const s=new Date(now.getFullYear(),now.getMonth(),1);return `${HE_MONTHS[now.getMonth()]} ${now.getFullYear()} · ${formatDate(s)} — ${formatDate(now)}`;}
+  if(range==='compare') return `השוואה בין חודשים · ${now.getFullYear()}`;
+  return '';
+}
+
+async function loadAll(){
+  document.getElementById('subtitle').textContent='טוען נתונים...';
+  try{
+    const res=await fetch(PROXY_URL);
+    const json=await res.json();
+    if(!json.ok) throw new Error(json.error);
+    allData=json.data;
+    document.getElementById('error-box').style.display='none';
+    render();
+    document.getElementById('updated-at').textContent='עודכן '+new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+  }catch(e){
+    document.getElementById('error-box').style.display='block';
+    document.getElementById('error-box').textContent='שגיאה: '+e.message;
+    document.getElementById('subtitle').textContent='שגיאה בטעינה';
+  }
+}
+
+function setRange(r,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  currentRange=r;
+  render();
+}
+
+function render(){
+  document.getElementById('date-range-label').textContent='📅 '+getRangeLabel(currentRange);
+  document.getElementById('subtitle').textContent=getRangeLabel(currentRange);
+  if(currentRange==='compare'){renderCompare();return;}
+  const leads=filterItems(allData.leads||[],currentRange);
+  const sales=filterItems(allData.sales||[],currentRange);
+  const stepup=filterItems(allData.stepup||[],currentRange);
+  const coaching=allData.coaching||[];
+  const sessions=filterItems(allData.sessions||[],currentRange);
+  const contact=leads.length;
+  const advisory=leads.filter(i=>ADVISORY_STATUSES.includes(getVal(i,BOARDS.leads.statusCol))).length+sales.filter(i=>['פגישת StepUp','נמכר ליווי','פולאו-אפ'].includes(getVal(i,BOARDS.sales.statusCol))).length;
+  const stepupC=stepup.length;
+  const sold=stepup.filter(i=>getVal(i,BOARDS.stepup.statusCol)==='נמכר ליווי').length+sales.filter(i=>getVal(i,BOARDS.sales.statusCol)==='נמכר ליווי').length;
+  const sessionsHeld=sessions.filter(i=>getVal(i,BOARDS.sessions.statusCol)==='התקיימה').length;
+  const srcMap={};
+  SOURCES.forEach(s=>srcMap[s.key]={contact:0,advisory:0,sold:0});
+  leads.forEach(item=>{
+    const src=getVal(item,BOARDS.leads.sourceCol);
+    const status=getVal(item,BOARDS.leads.statusCol);
+    if(!srcMap[src])srcMap[src]={contact:0,advisory:0,sold:0};
+    srcMap[src].contact++;
+    if(ADVISORY_STATUSES.includes(status))srcMap[src].advisory++;
+  });
+  document.getElementById('main-content').innerHTML=`
+    ${metricsHTML(contact,advisory,stepupC,sold,sessionsHeld)}
+    <div class="row2">
+      <div class="card"><div class="card-title">משפך המרה</div>${funnelHTML(contact,advisory,stepupC,sold)}</div>
+      <div class="card"><div class="card-title">לידים לפי מקור</div><div class="src-grid">${srcGridHTML(srcMap)}</div></div>
+    </div>
+    <div class="row3">
+      <div class="card"><div class="card-title">פירוט מקורות</div>${tableHTML(srcMap)}</div>
+      <div class="card"><div class="card-title">ליוויים פעילים</div>${coachingHTML(coaching)}</div>
+    </div>`;
+}
+
+function metricsHTML(contact,advisory,stepup,sold,sessions){
+  const c1=contact>0?Math.round(advisory/contact*100):0;
+  const c2=advisory>0?Math.round(stepup/advisory*100):0;
+  const c3=stepup>0?Math.round(sold/stepup*100):0;
+  return `<div class="metrics">
+    <div class="mc"><div class="mc-label">יצרו קשר</div><div class="mc-value c-blue">${contact}</div><div class="mc-sub c-text2">כניסות</div></div>
+    <div class="mc"><div class="mc-label">שיחת ייעוץ</div><div class="mc-value c-green">${advisory}</div><div class="mc-sub c-green">${c1}% המרה</div></div>
+    <div class="mc"><div class="mc-label">פגישת STEP-UP</div><div class="mc-value c-amber">${stepup}</div><div class="mc-sub c-amber">${c2}% מהשיחות</div></div>
+    <div class="mc"><div class="mc-label">רכישת ליווי</div><div class="mc-value c-purple">${sold}</div><div class="mc-sub c-purple">${c3}% מ-STEP-UP</div></div>
+    <div class="mc"><div class="mc-label">פגישות ליווי</div><div class="mc-value c-text2">${sessions}</div><div class="mc-sub c-text2">התקיימו</div></div>
+  </div>`;
+}
+
+function funnelHTML(contact,advisory,stepup,sold){
+  const steps=[
+    {name:'יצרו קשר',val:contact,color:'#dbeafe',text:'#1d4ed8',w:100},
+    {name:'שיחת ייעוץ',val:advisory,color:'#dcfce7',text:'#15803d',w:82},
+    {name:'פגישת STEP-UP',val:stepup,color:'#fef3c7',text:'#b45309',w:66},
+    {name:'רכישת ליווי',val:sold,color:'#ede9fe',text:'#6d28d9',w:46},
+  ];
+  return '<div class="funnel">'+steps.map((s,i)=>{
+    const pct=contact>0?Math.round(s.val/contact*100):0;
+    const conv=i>0&&steps[i-1].val>0?` · ${Math.round(s.val/steps[i-1].val*100)}% מהשלב הקודם`:'';
+    return `${i>0?'<div class="funnel-arr">▼</div>':''}<div class="funnel-step" style="background:${s.color};width:${s.w}%"><span class="funnel-label" style="color:${s.text}">${s.name}</span><span class="funnel-right"><span class="funnel-num" style="color:${s.text}">${s.val}</span><span class="funnel-pct" style="color:${s.text}">${pct}%${conv}</span></span></div>`;
+  }).join('')+'</div>';
+}
+
+function srcGridHTML(srcMap){
+  const total=SOURCES.reduce((a,s)=>a+(srcMap[s.key]?.contact||0),0);
+  return SOURCES.map(s=>{
+    const count=srcMap[s.key]?.contact||0;
+    const pct=total>0?Math.round(count/total*100):0;
+    return `<div class="src-card"><div class="src-name">${s.label}</div><div class="src-num" style="color:${s.color}">${count}</div><div class="src-pct">${pct}% מסך הלידים</div><div class="src-bar-wrap"><div class="src-bar" style="width:${pct}%;background:${s.color}"></div></div></div>`;
+  }).join('');
+}
+
+function tableHTML(srcMap){
+  return `<table><tr><th>מקור</th><th style="text-align:center">קשר</th><th style="text-align:center">ייעוץ</th><th style="text-align:center">ליווי</th><th style="text-align:center">המרה</th></tr>
+  ${SOURCES.map(s=>{
+    const d=srcMap[s.key]||{contact:0,advisory:0,sold:0};
+    const conv=d.contact>0?Math.round(d.sold/d.contact*100):0;
+    const cc=conv>=30?'color:#16a34a;background:#dcfce7':conv>=15?'color:#d97706;background:#fef3c7':'color:#dc2626;background:#fee2e2';
+    return `<tr><td><span class="src-badge" style="background:${s.bg};color:${s.color}">${s.label}</span></td><td style="text-align:center;font-weight:600">${d.contact}</td><td style="text-align:center">${d.advisory}</td><td style="text-align:center;font-weight:700">${d.sold}</td><td style="text-align:center"><span class="conv-pill" style="${cc}">${conv}%</span></td></tr>`;
+  }).join('')}</table>`;
+}
+
+function coachingHTML(items){
+  const active=items.filter(i=>getVal(i,BOARDS.coaching.statusCol)==='פעיל');
+  if(!active.length) return '<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px 0">אין ליוויים פעילים</div>';
+  return active.map(item=>`<div class="coach-row"><div class="coach-top"><span class="coach-name">${item.name}</span><span class="coach-count">פעיל</span></div><div class="progress-wrap"><div class="progress-bar" style="width:40%"></div></div></div>`).join('');
+}
+
+function renderCompare(){
+  const now=new Date();
+  const monthData=[];
+  for(let m=0;m<=now.getMonth();m++){
+    const start=new Date(now.getFullYear(),m,1);
+    const end=new Date(now.getFullYear(),m+1,0,23,59,59);
+    const inMonth=items=>items.filter(i=>{if(!i.created_at)return false;const d=new Date(i.created_at);return d>=start&&d<=end;});
+    const leads=inMonth(allData.leads||[]);
+    const sales=inMonth(allData.sales||[]);
+    const stepup=inMonth(allData.stepup||[]);
+    const contact=leads.length;
+    const advisory=leads.filter(i=>ADVISORY_STATUSES.includes(getVal(i,BOARDS.leads.statusCol))).length;
+    const stepupC=stepup.length;
+    const sold=stepup.filter(i=>getVal(i,BOARDS.stepup.statusCol)==='נמכר ליווי').length+sales.filter(i=>getVal(i,BOARDS.sales.statusCol)==='נמכר ליווי').length;
+    if(contact>0||m===now.getMonth()) monthData.push({m,name:HE_MONTHS[m],start,end,contact,advisory,stepup:stepupC,sold});
+  }
+  const maxC=Math.max(...monthData.map(d=>d.contact),1);
+  const cols=Math.min(monthData.length,3);
+  document.getElementById('main-content').innerHTML=`
+    <div class="months-grid" style="grid-template-columns:repeat(${cols},1fr)">
+      ${monthData.map(d=>{
+        const conv=d.contact>0?Math.round(d.sold/d.contact*100):0;
+        const barW=Math.round(d.contact/maxC*100);
+        const endDate=d.m===now.getMonth()?formatDate(now):formatDate(d.end);
+        return `<div class="month-card">
+          <div class="month-header"><span class="month-name">${d.name}</span><span class="month-dates">${formatDate(d.start)} — ${endDate}</span></div>
+          <div class="month-metrics">
+            <div class="month-metric"><div class="month-metric-val c-blue">${d.contact}</div><div class="month-metric-lbl">קשר</div></div>
+            <div class="month-metric"><div class="month-metric-val c-green">${d.advisory}</div><div class="month-metric-lbl">ייעוץ</div></div>
+            <div class="month-metric"><div class="month-metric-val c-amber">${d.stepup}</div><div class="month-metric-lbl">STEP-UP</div></div>
+            <div class="month-metric"><div class="month-metric-val c-purple">${d.sold} <span style="font-size:10px">${conv}%</span></div><div class="month-metric-lbl">ליווי</div></div>
+          </div>
+          <div class="src-bar-wrap" style="margin-top:8px"><div class="src-bar" style="width:${barW}%;background:var(--blue)"></div></div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+loadAll();
+setInterval(loadAll,5*60*1000);
+</script>
+</body>
+</html>
