@@ -1,4 +1,5 @@
-const http = require('http');
+const fs = require('fs');
+const path = require('path');
 const https = require('https');
 
 const MONDAY_TOKEN = process.env.MONDAY_TOKEN || '';
@@ -282,7 +283,9 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   if (req.url === '/health') { res.writeHead(200); res.end('OK'); return; }
-  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+  const html = fs.readFileSync(path.join('/opt/render/project/src', 'index.html'), 'utf8');
+res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+res.end(html);
   res.end(HTML);
 });
 server.listen(PORT, () => {
