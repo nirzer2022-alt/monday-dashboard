@@ -1,7 +1,7 @@
+const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
-const https = require('https');
-
 const MONDAY_TOKEN = process.env.MONDAY_TOKEN || '';
 const PORT = process.env.PORT || 3000;
 
