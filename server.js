@@ -286,7 +286,6 @@ const server = http.createServer(async (req, res) => {
   const html = fs.readFileSync(path.join('/opt/render/project/src', 'index.html'), 'utf8');
 res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
 res.end(html);
-  res.end(HTML);
 });
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
