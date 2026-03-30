@@ -283,9 +283,14 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   if (req.url === '/health') { res.writeHead(200); res.end('OK'); return; }
+ try {
   const html = fs.readFileSync(path.join('/opt/render/project/src', 'index.html'), 'utf8');
-res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-res.end(html);
+  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+  res.end(html);
+} catch(e) {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Error reading index.html: ' + e.message);
+}
 });
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
