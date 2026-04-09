@@ -142,20 +142,30 @@ async function fetchCalendarEvents(token, calendarId, timeMin, timeMax) {
 function classifyEvent(event) {
   const start = new Date(event.start?.dateTime || event.start?.date);
   const end = new Date(event.end?.dateTime || event.end?.date);
-  const duration = (end - start) / 60000; // minutes
-  const colorId = event.colorId || '';
+  const duration = (end - start) / 60000;
   const summary = event.summary || '';
+  const summaryLower = summary.toLowerCase();
 
-  // Blue colors: colorId 1,7,9 = blue/peacock/blueberry
-  // Red colors: colorId 4,6,11 = flamingo/tomato/banana
-  const isBlue = ['1','7','9'].includes(colorId);
-  const isRed = ['4','6','11'].includes(colorId);
+  // Filter: must contain פגישה or שיחה
+  if (!summary.includes('פגישה') && !summary.includes('שיחה')) return null;
 
+  // Filter: must be a known duration
+  const knownDuration =
+    Math.abs(duration - 20) <= 5 ||
+    Math.abs(duration - 30) <= 5 ||
+    Math.abs(duration - 60) <= 5 ||
+    Math.abs(duration - 120) <= 5;
+  if (!knownDuration) return null;
+
+  // Classify by duration
   let type = 'אחר';
   if (Math.abs(duration - 60) <= 5) type = 'ליווי';
   else if (Math.abs(duration - 120) <= 5) type = 'step-up';
   else if (Math.abs(duration - 20) <= 5) type = 'ייעוץ';
   else if (Math.abs(duration - 30) <= 5) type = 'שירות';
+
+  // Zoom detection
+  const isZoom = summaryLower.includes('זום') || summaryLower.includes('zoom');
 
   // Extract client name (before the dash)
   const namePart = summary.split('—')[0].split('-')[0].trim();
@@ -165,7 +175,7 @@ function classifyEvent(event) {
     summary,
     client: namePart,
     type,
-    colorId,
+    zoom: isZoom,
     duration,
     start: start.toISOString(),
     end: end.toISOString(),
@@ -178,7 +188,7 @@ async function getCalendarData(timeMin, timeMax) {
   const token = await getGoogleToken(CALENDAR_CREDS);
   const result = await fetchCalendarEvents(token, CALENDAR_ID, timeMin, timeMax);
   const events = (result.items || []).filter(e => e.status !== 'cancelled');
-  return events.map(classifyEvent);
+  return events.map(classifyEvent).filter(e => e !== null);
 }
 
 // ─── HTTP Server ──────────────────────────────────────────────────────────────
