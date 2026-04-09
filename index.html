@@ -28,9 +28,8 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);min-h
 .mc-label{font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:500;}
 .mc-value{font-size:28px;font-weight:700;line-height:1;}
 .mc-sub{font-size:11px;margin-top:5px;font-weight:500;}
-.c-green{color:var(--green);}.c-blue{color:var(--blue);}.c-amber{color:var(--amber);}.c-purple{color:var(--purple);}.c-text2{color:var(--text2);}.c-teal{color:#0891b2;}
-.row2{display:grid;grid-template-columns:1.3fr 1fr;gap:12px;margin-bottom:12px;}
-.row3{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.c-green{color:var(--green);}.c-blue{color:var(--blue);}.c-amber{color:var(--amber);}.c-purple{color:var(--purple);}.c-text2{color:var(--text2);}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;}
 .card-title{font-size:11px;color:var(--text2);margin-bottom:12px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;}
 .funnel{display:flex;flex-direction:column;gap:5px;}
@@ -40,24 +39,13 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);min-h
 .funnel-num{font-size:16px;font-weight:700;}
 .funnel-pct{font-size:11px;opacity:.8;}
 .funnel-arr{font-size:9px;color:var(--text3);text-align:center;}
-.src-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
-.src-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;}
-.src-name{font-size:11px;color:var(--text2);margin-bottom:4px;font-weight:500;}
-.src-num{font-size:20px;font-weight:700;}
-.src-pct{font-size:10px;color:var(--text3);margin-top:1px;}
-.src-bar-wrap{height:3px;background:var(--border);border-radius:2px;margin-top:6px;}
-.src-bar{height:100%;border-radius:2px;}
 table{width:100%;border-collapse:collapse;font-size:13px;}
-th{text-align:right;color:var(--text3);font-weight:500;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px;}
-td{padding:7px 0;color:var(--text);border-bottom:1px solid var(--bg3);}
+th{text-align:right;color:var(--text3);font-weight:500;padding:6px 4px;border-bottom:1px solid var(--border);font-size:11px;}
+td{padding:7px 4px;color:var(--text);border-bottom:1px solid var(--bg3);}
 tr:last-child td{border-bottom:none;}
 .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;}
-.coach-row{margin-bottom:10px;}
-.coach-top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;}
-.coach-name{font-weight:600;}
-.coach-count{color:var(--text2);}
-.prog-wrap{height:4px;background:var(--bg3);border-radius:2px;}
-.prog-bar{height:100%;border-radius:2px;background:var(--green);}
+.src-bar-wrap{height:3px;background:var(--border);border-radius:2px;margin-top:4px;}
+.src-bar{height:100%;border-radius:2px;}
 .months-grid{display:grid;gap:10px;margin-bottom:12px;}
 .month-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
 .month-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
@@ -67,12 +55,13 @@ tr:last-child td{border-bottom:none;}
 .month-metric-val{font-size:18px;font-weight:700;}
 .month-metric-lbl{font-size:10px;color:var(--text2);margin-top:1px;}
 .err{background:var(--red-bg);border:1px solid var(--red-b);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--red);margin-bottom:14px;}
-
-/* ── Calendar Tab ── */
+.comm-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:14px;}
+.comm-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-align:center;}
+.comm-val{font-size:24px;font-weight:700;}
+.comm-lbl{font-size:11px;color:var(--text2);margin-top:4px;}
 .cal-controls{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;}
 .cal-controls input[type=date]{border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;font-family:'Heebo',sans-serif;background:var(--bg2);color:var(--text);}
-.cal-controls input[type=text]{border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;font-family:'Heebo',sans-serif;background:var(--bg2);color:var(--text);min-width:160px;}
-.cal-controls input::placeholder{color:var(--text3);}
+.cal-search{border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;font-family:'Heebo',sans-serif;background:var(--bg2);color:var(--text);min-width:160px;direction:rtl;}
 .cal-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
 .cal-metric{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;text-align:center;}
 .cal-metric-val{font-size:28px;font-weight:700;}
@@ -83,15 +72,14 @@ tr:last-child td{border-bottom:none;}
 .type-ייעוץ{background:#fef3c7;color:#b45309;}
 .type-שירות{background:#dcfce7;color:#15803d;}
 .type-אחר{background:var(--bg3);color:var(--text2);}
-.cal-client-section{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:12px;}
-.client-summary{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--bg3);}
-.client-summary:last-child{border-bottom:none;}
+.client-section{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:12px;}
+.client-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--bg3);}
+.client-row:last-child{border-bottom:none;}
 .client-name{font-weight:600;font-size:14px;}
-.client-stats{display:flex;gap:16px;font-size:13px;color:var(--text2);}
+.client-stats{display:flex;gap:16px;}
 .client-stat{text-align:center;}
-.client-stat-val{font-weight:700;font-size:16px;color:var(--text);}
+.client-stat-val{font-weight:700;font-size:16px;}
 .client-stat-lbl{font-size:10px;color:var(--text3);}
-.loading{text-align:center;padding:40px;color:var(--text2);font-size:14px;}
 </style>
 </head>
 <body>
@@ -112,13 +100,15 @@ tr:last-child td{border-bottom:none;}
     <button class="tab" onclick="go('week',this)">שבוע</button>
     <button class="tab" onclick="go('month',this)">חודש זה</button>
     <button class="tab" onclick="go('compare',this)">השוואת חודשים</button>
+    <button class="tab" onclick="go('comm',this)">📞 תקשורת</button>
     <button class="tab cal-tab" onclick="go('calendar',this)">📅 יומן פגישות</button>
   </div>
-  <div class="date-range" id="dr">📅 טוען...</div>
+  <div class="date-range" id="dr" style="display:none"></div>
   <div id="err" class="err" style="display:none"></div>
   <div id="content"></div>
 </div>
 <script>
+const PROXY_URL='/data';
 const SRC=[
   {key:'אתר',label:'אתר',color:'#2563eb',bg:'#dbeafe'},
   {key:'דף נחיתה פיסגה',label:'פסגה',color:'#7c3aed',bg:'#ede9fe'},
@@ -129,241 +119,292 @@ const SRC=[
 ];
 const ADV=['נקבעה שיחה','רלוונטי-העבר למכירות','פולאו-אפ','פגישת StepUp','נמכר ליווי'];
 const MO=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
-let range='today', data={}, calEvents=[], calFilter={client:'',from:'',to:''};
+let range='today',data={},calEvents=[],calClientFilter='',calFrom='',calTo='';
 const fd=d=>d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();
+const toISO=d=>d.toISOString().split('T')[0];
 const gv=(item,col)=>item.column_values?.find(c=>c.id===col)?.text||'';
-
-function toInputDate(d){ return d.toISOString().split('T')[0]; }
-
-function filter(items,r){
+function getDate(item,col){if(col){const v=gv(item,col);if(v&&v.trim())return new Date(v);}return item.created_at?new Date(item.created_at):null;}
+function filter(items,r,col){
   const now=new Date();let s;
   if(r==='today'){s=new Date(now);s.setHours(0,0,0,0);}
   else if(r==='week'){s=new Date(now);s.setDate(now.getDate()-now.getDay());s.setHours(0,0,0,0);}
   else if(r==='month'){s=new Date(now.getFullYear(),now.getMonth(),1);}
   else return items;
-  return items.filter(i=>i.created_at&&new Date(i.created_at)>=s);
+  return items.filter(i=>{const d=getDate(i,col);return d&&d>=s;});
 }
-
 function label(r){
   const n=new Date();
   if(r==='today')return'היום · '+fd(n);
   if(r==='week'){const s=new Date(n);s.setDate(n.getDate()-n.getDay());return fd(s)+' — '+fd(n);}
   if(r==='month'){const s=new Date(n.getFullYear(),n.getMonth(),1);return MO[n.getMonth()]+' '+n.getFullYear()+' · '+fd(s)+' — '+fd(n);}
   if(r==='compare')return'השוואה בין חודשים · '+n.getFullYear();
+  if(r==='comm')return'פעילות תקשורת Voicenter';
   if(r==='calendar')return'יומן פגישות';
+  return '';
 }
-
+function setDR(r){
+  const dr=document.getElementById('dr');
+  if(r==='calendar'||r==='comm'){dr.style.display='none';return;}
+  dr.style.display='inline-flex';
+  dr.textContent='📅 '+label(r);
+}
 async function load(){
   document.getElementById('sub').textContent='טוען...';
   try{
-    const res=await fetch('/data');
+    const res=await fetch(PROXY_URL);
     const j=await res.json();
     if(!j.ok)throw new Error(j.error);
     data=j.data;
     document.getElementById('err').style.display='none';
-    if(range!=='calendar') render();
+    if(range!=='calendar')render();
     document.getElementById('upd').textContent='עודכן '+new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
   }catch(e){
     document.getElementById('err').style.display='block';
     document.getElementById('err').textContent='שגיאה: '+e.message;
+    document.getElementById('sub').textContent='שגיאה';
   }
 }
-
-async function loadCalendar(){
-  const now = new Date();
-  const from = calFilter.from || toInputDate(new Date(now.getFullYear(), 0, 1));
-  const to = calFilter.to || toInputDate(now);
-  document.getElementById('content').innerHTML='<div class="loading">טוען נתוני יומן...</div>';
-  try{
-    const res = await fetch(`/calendar?from=${from}&to=${to}`);
-    const j = await res.json();
-    if(!j.ok) throw new Error(j.error);
-    calEvents = j.events;
-    renderCalendar();
-  }catch(e){
-    document.getElementById('content').innerHTML=`<div class="err">שגיאה בטעינת יומן: ${e.message}</div>`;
-  }
+function reload(){
+  if(range==='calendar')loadCalendar();
+  else load();
 }
-
 function go(r,el){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
   range=r;
-  if(r==='calendar'){ renderCalendarShell(); loadCalendar(); }
+  setDR(r);
+  if(r==='calendar'){renderCalendarShell();loadCalendar();}
   else render();
 }
-
-function reload(){
-  if(range==='calendar') loadCalendar();
-  else load();
-}
-
 function render(){
-  document.getElementById('dr').textContent='📅 '+label(range);
   document.getElementById('sub').textContent=label(range);
   if(range==='compare'){cmp();return;}
-  const L=filter(data.leads||[],range),S=filter(data.sales||[],range),T=filter(data.stepup||[],range),C=data.coaching||[],M=filter(data.sessions||[],range);
+  if(range==='comm'){commTab();return;}
+  const L=filter(data.leads||[],range,null);
+  const S=filter(data.sales||[],range,'date_mm00jx0c');
+  const T=filter(data.stepup||[],range,'date4');
+  const C=data.coaching||[];
+  const M=filter(data.sessions||[],range,null);
   const contact=L.length;
-  const adv=L.filter(i=>ADV.includes(gv(i,'lead_status'))).length+S.filter(i=>['פגישת StepUp','נמכר ליווי','פולאו-אפ'].includes(gv(i,'lead_status'))).length;
+  const adv=L.filter(i=>ADV.includes(gv(i,'lead_status'))).length+S.filter(i=>['פגישת StepUp','נמכר ליווי','פולאו-אפ'].includes(gv(i,'deal_stage'))).length;
   const su=T.length;
-  const sold=T.filter(i=>gv(i,'lead_status')==='נמכר ליווי').length+S.filter(i=>gv(i,'lead_status')==='נמכר ליווי').length;
+  const sold=T.filter(i=>gv(i,'status')==='נמכר ליווי').length+S.filter(i=>gv(i,'deal_stage')==='נמכר ליווי').length;
   const sess=M.filter(i=>gv(i,'status')==='התקיימה').length;
-  const sm={};SRC.forEach(s=>sm[s.key]={c:0,a:0,sold:0});
-  L.forEach(i=>{const s=gv(i,'color_mkvd5y1g');if(!sm[s])sm[s]={c:0,a:0,sold:0};sm[s].c++;if(ADV.includes(gv(i,'lead_status')))sm[s].a++;});
-  const c1=contact>0?Math.round(adv/contact*100):0,c2=adv>0?Math.round(su/adv*100):0,c3=su>0?Math.round(sold/su*100):0;
-  document.getElementById('content').innerHTML=`
-<div class="metrics">
-  <div class="mc"><div class="mc-label">יצרו קשר</div><div class="mc-value c-blue">${contact}</div><div class="mc-sub c-text2">כניסות</div></div>
-  <div class="mc"><div class="mc-label">שיחת ייעוץ</div><div class="mc-value c-green">${adv}</div><div class="mc-sub c-green">${c1}% המרה</div></div>
-  <div class="mc"><div class="mc-label">פגישת STEP-UP</div><div class="mc-value c-amber">${su}</div><div class="mc-sub c-amber">${c2}% מהשיחות</div></div>
-  <div class="mc"><div class="mc-label">רכישת ליווי</div><div class="mc-value c-purple">${sold}</div><div class="mc-sub c-purple">${c3}% מ-STEP-UP</div></div>
-  <div class="mc"><div class="mc-label">פגישות ליווי</div><div class="mc-value c-text2">${sess}</div><div class="mc-sub c-text2">התקיימו</div></div>
-</div>
-<div class="row2">
-  <div class="card"><div class="card-title">משפך המרה</div>${funnel(contact,adv,su,sold)}</div>
-  <div class="card"><div class="card-title">לידים לפי מקור</div><div class="src-grid">${srcGrid(sm)}</div></div>
-</div>
-<div class="row3">
-  <div class="card"><div class="card-title">פירוט מקורות</div>${tbl(sm)}</div>
-  <div class="card"><div class="card-title">ליוויים פעילים</div>${coach(C)}</div>
-</div>`;
+  const c1=contact>0?Math.round(adv/contact*100):0;
+  const c2=adv>0?Math.round(su/adv*100):0;
+  const c3=su>0?Math.round(sold/su*100):0;
+  const sm={};SRC.forEach(s=>sm[s.key]={c:0,a:0,su:0,sold:0});
+  L.forEach(i=>{const s=gv(i,'color_mkvd5y1g');if(!sm[s])sm[s]={c:0,a:0,su:0,sold:0};sm[s].c++;if(ADV.includes(gv(i,'lead_status')))sm[s].a++;});
+  document.getElementById('content').innerHTML=
+    '<div class="metrics">'+
+    '<div class="mc"><div class="mc-label">יצרו קשר</div><div class="mc-value c-blue">'+contact+'</div><div class="mc-sub c-text2">כניסות</div></div>'+
+    '<div class="mc"><div class="mc-label">שיחת ייעוץ</div><div class="mc-value c-green">'+adv+'</div><div class="mc-sub c-green">'+c1+'% המרה</div></div>'+
+    '<div class="mc"><div class="mc-label">פגישת STEP-UP</div><div class="mc-value c-amber">'+su+'</div><div class="mc-sub c-amber">'+c2+'% מהשיחות</div></div>'+
+    '<div class="mc"><div class="mc-label">רכישת ליווי</div><div class="mc-value c-purple">'+sold+'</div><div class="mc-sub c-purple">'+c3+'% מ-STEP-UP</div></div>'+
+    '<div class="mc"><div class="mc-label">פגישות ליווי</div><div class="mc-value c-text2">'+sess+'</div><div class="mc-sub c-text2">התקיימו</div></div>'+
+    '</div>'+
+    '<div class="row2">'+
+    '<div class="card"><div class="card-title">משפך המרה</div>'+funnel(contact,adv,su,sold)+'</div>'+
+    '<div class="card"><div class="card-title">פירוט מקורות</div>'+srcTable(sm,contact)+'</div>'+
+    '</div>'+
+    '<div class="card" style="margin-bottom:12px"><div class="card-title">ליוויים פעילים</div>'+coach(C)+'</div>';
 }
-
 function funnel(contact,adv,su,sold){
-  const steps=[{n:'יצרו קשר',v:contact,bg:'#dbeafe',t:'#1d4ed8',w:100},{n:'שיחת ייעוץ',v:adv,bg:'#dcfce7',t:'#15803d',w:82},{n:'פגישת STEP-UP',v:su,bg:'#fef3c7',t:'#b45309',w:66},{n:'רכישת ליווי',v:sold,bg:'#ede9fe',t:'#6d28d9',w:46}];
-  return '<div class="funnel">'+steps.map((s,i)=>{
+  const steps=[
+    {n:'יצרו קשר',v:contact,bg:'#dbeafe',t:'#1d4ed8',w:100},
+    {n:'שיחת ייעוץ',v:adv,bg:'#dcfce7',t:'#15803d',w:82},
+    {n:'פגישת STEP-UP',v:su,bg:'#fef3c7',t:'#b45309',w:66},
+    {n:'רכישת ליווי',v:sold,bg:'#ede9fe',t:'#6d28d9',w:46},
+  ];
+  let h='<div class="funnel">';
+  steps.forEach(function(s,i){
     const p=contact>0?Math.round(s.v/contact*100):0;
     const cv=i>0&&steps[i-1].v>0?' · '+Math.round(s.v/steps[i-1].v*100)+'% מהשלב הקודם':'';
-    return (i>0?'<div class="funnel-arr">▼</div>':'')+`<div class="funnel-step" style="background:${s.bg};width:${s.w}%"><span class="funnel-label" style="color:${s.t}">${s.n}</span><span class="funnel-right"><span class="funnel-num" style="color:${s.t}">${s.v}</span><span class="funnel-pct" style="color:${s.t}">${p}%${cv}</span></span></div>`;
-  }).join('')+'</div>';
+    if(i>0)h+='<div class="funnel-arr">▼</div>';
+    h+='<div class="funnel-step" style="background:'+s.bg+';width:'+s.w+'%">'+
+       '<span class="funnel-label" style="color:'+s.t+'">'+s.n+'</span>'+
+       '<span class="funnel-right">'+
+       '<span class="funnel-num" style="color:'+s.t+'">'+s.v+'</span>'+
+       '<span class="funnel-pct" style="color:'+s.t+'">'+p+'%'+cv+'</span>'+
+       '</span></div>';
+  });
+  return h+'</div>';
 }
-
-function srcGrid(sm){
-  const tot=SRC.reduce((a,s)=>a+(sm[s.key]?.c||0),0);
-  return SRC.map(s=>{const n=sm[s.key]?.c||0,p=tot>0?Math.round(n/tot*100):0;return `<div class="src-card"><div class="src-name">${s.label}</div><div class="src-num" style="color:${s.color}">${n}</div><div class="src-pct">${p}% מסך הלידים</div><div class="src-bar-wrap"><div class="src-bar" style="width:${p}%;background:${s.color}"></div></div></div>`;}).join('');
+function srcTable(sm,total){
+  let rows='';
+  SRC.forEach(function(s){
+    const d=sm[s.key]||{c:0,a:0,su:0,sold:0};
+    const pt=total>0?Math.round(d.c/total*100):0;
+    const pa=d.c>0?Math.round(d.a/d.c*100):0;
+    const ps=d.a>0?Math.round(d.su/d.a*100):0;
+    const pl=d.su>0?Math.round(d.sold/d.su*100):0;
+    const cv=d.c>0?Math.round(d.sold/d.c*100):0;
+    const cc=cv>=30?'color:#16a34a;background:#dcfce7':cv>=15?'color:#d97706;background:#fef3c7':'color:#dc2626;background:#fee2e2';
+    rows+='<tr>'+
+      '<td><span class="badge" style="background:'+s.bg+';color:'+s.color+'">'+s.label+'</span>'+
+      '<div class="src-bar-wrap" style="width:80px;margin-top:3px"><div class="src-bar" style="width:'+pt+'%;background:'+s.color+'"></div></div></td>'+
+      '<td style="text-align:center;font-weight:600">'+d.c+'<div style="font-size:10px;color:#9ca3af">'+pt+'%</div></td>'+
+      '<td style="text-align:center">'+d.a+'<div style="font-size:10px;color:#9ca3af">'+pa+'%</div></td>'+
+      '<td style="text-align:center">'+d.su+'<div style="font-size:10px;color:#9ca3af">'+ps+'%</div></td>'+
+      '<td style="text-align:center;font-weight:700">'+d.sold+'<div style="font-size:10px;color:#9ca3af">'+pl+'%</div></td>'+
+      '<td style="text-align:center"><span class="badge" style="'+cc+'">'+cv+'%</span></td>'+
+      '</tr>';
+  });
+  return '<table><tr><th>מקור</th><th style="text-align:center">קשר</th><th style="text-align:center">ייעוץ</th><th style="text-align:center">STEP-UP</th><th style="text-align:center">ליווי</th><th style="text-align:center">המרה</th></tr>'+rows+'</table>';
 }
-
-function tbl(sm){
-  return '<table><tr><th>מקור</th><th style="text-align:center">קשר</th><th style="text-align:center">ייעוץ</th><th style="text-align:center">ליווי</th><th style="text-align:center">המרה</th></tr>'+
-  SRC.map(s=>{const d=sm[s.key]||{c:0,a:0,sold:0};const cv=d.c>0?Math.round(d.sold/d.c*100):0;const cc=cv>=30?'color:#16a34a;background:#dcfce7':cv>=15?'color:#d97706;background:#fef3c7':'color:#dc2626;background:#fee2e2';return `<tr><td><span class="badge" style="background:${s.bg};color:${s.color}">${s.label}</span></td><td style="text-align:center;font-weight:600">${d.c}</td><td style="text-align:center">${d.a}</td><td style="text-align:center;font-weight:700">${d.sold}</td><td style="text-align:center"><span class="badge" style="${cc}">${cv}%</span></td></tr>`;}).join('')+'</table>';
-}
-
 function coach(items){
-  const active=items.filter(i=>gv(i,'status')==='פעיל');
+  const active=items.filter(function(i){return gv(i,'status')==='פעיל';});
   if(!active.length)return '<div style="color:#9ca3af;font-size:13px;text-align:center;padding:16px 0">אין ליוויים פעילים</div>';
-  return active.map(i=>`<div class="coach-row"><div class="coach-top"><span class="coach-name">${i.name}</span><span class="coach-count">פעיל</span></div><div class="prog-wrap"><div class="prog-bar" style="width:40%"></div></div></div>`).join('');
+  let h='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">';
+  active.forEach(function(i){h+='<div style="background:var(--bg3);border-radius:8px;padding:10px 12px"><div style="font-weight:600;font-size:13px;margin-bottom:4px">'+i.name+'</div><div style="font-size:11px;color:var(--green)">פעיל</div></div>';});
+  return h+'</div>';
 }
-
 function cmp(){
   const now=new Date();const md=[];
   for(let m=0;m<=now.getMonth();m++){
     const s=new Date(now.getFullYear(),m,1),e=new Date(now.getFullYear(),m+1,0,23,59,59);
-    const inM=arr=>arr.filter(i=>{if(!i.created_at)return false;const d=new Date(i.created_at);return d>=s&&d<=e;});
-    const L=inM(data.leads||[]),S=inM(data.sales||[]),T=inM(data.stepup||[]);
-    const c=L.length,a=L.filter(i=>ADV.includes(gv(i,'lead_status'))).length,su=T.length;
-    const sold=T.filter(i=>gv(i,'lead_status')==='נמכר ליווי').length+S.filter(i=>gv(i,'lead_status')==='נמכר ליווי').length;
-    if(c>0||m===now.getMonth())md.push({m,name:MO[m],s,e,c,a,su,sold});
+    function inM(arr,col){return arr.filter(function(i){const d=col?new Date(gv(i,col)||''):new Date(i.created_at||'');if(isNaN(d))return false;return d>=s&&d<=e;});}
+    const L=inM(data.leads||[],null),S=inM(data.sales||[],'date_mm00jx0c'),T=inM(data.stepup||[],'date4');
+    const c=L.length,a=L.filter(function(i){return ADV.includes(gv(i,'lead_status'));}).length,su=T.length;
+    const sold=T.filter(function(i){return gv(i,'status')==='נמכר ליווי';}).length+S.filter(function(i){return gv(i,'deal_stage')==='נמכר ליווי';}).length;
+    if(c>0||m===now.getMonth())md.push({m:m,name:MO[m],s:s,e:e,c:c,a:a,su:su,sold:sold});
   }
-  const mx=Math.max(...md.map(d=>d.c),1);
+  const mx=Math.max.apply(null,md.map(function(d){return d.c;}));const mx2=mx||1;
   const cols=Math.min(md.length,3);
-  document.getElementById('content').innerHTML=`<div class="months-grid" style="grid-template-columns:repeat(${cols},1fr)">${md.map(d=>{
-    const cv=d.c>0?Math.round(d.sold/d.c*100):0,bw=Math.round(d.c/mx*100);
+  let h='<div class="months-grid" style="grid-template-columns:repeat('+cols+',1fr)">';
+  md.forEach(function(d){
+    const cv=d.c>0?Math.round(d.sold/d.c*100):0,bw=Math.round(d.c/mx2*100);
     const ed=d.m===now.getMonth()?fd(now):fd(d.e);
-    return `<div class="month-card"><div class="month-header"><span class="month-name">${d.name}</span><span class="month-dates">${fd(d.s)} — ${ed}</span></div><div class="month-metrics"><div><div class="month-metric-val c-blue">${d.c}</div><div class="month-metric-lbl">קשר</div></div><div><div class="month-metric-val c-green">${d.a}</div><div class="month-metric-lbl">ייעוץ</div></div><div><div class="month-metric-val c-amber">${d.su}</div><div class="month-metric-lbl">STEP-UP</div></div><div><div class="month-metric-val c-purple">${d.sold} <span style="font-size:11px">${cv}%</span></div><div class="month-metric-lbl">ליווי</div></div></div><div class="src-bar-wrap" style="margin-top:8px"><div class="src-bar" style="width:${bw}%;background:#2563eb"></div></div></div>`;
-  }).join('')}</div>`;
+    h+='<div class="month-card">'+
+      '<div class="month-header"><span class="month-name">'+d.name+'</span><span class="month-dates">'+fd(d.s)+' — '+ed+'</span></div>'+
+      '<div class="month-metrics">'+
+      '<div><div class="month-metric-val c-blue">'+d.c+'</div><div class="month-metric-lbl">קשר</div></div>'+
+      '<div><div class="month-metric-val c-green">'+d.a+'</div><div class="month-metric-lbl">ייעוץ</div></div>'+
+      '<div><div class="month-metric-val c-amber">'+d.su+'</div><div class="month-metric-lbl">STEP-UP</div></div>'+
+      '<div><div class="month-metric-val c-purple">'+d.sold+' <span style="font-size:11px">'+cv+'%</span></div><div class="month-metric-lbl">ליווי</div></div>'+
+      '</div>'+
+      '<div class="src-bar-wrap" style="margin-top:8px"><div class="src-bar" style="width:'+bw+'%;background:#2563eb"></div></div>'+
+      '</div>';
+  });
+  document.getElementById('content').innerHTML=h+'</div>';
 }
-
-// ── Calendar Tab ──────────────────────────────────────────────────────────────
-
-function renderCalendarShell(){
-  document.getElementById('dr').textContent='📅 יומן פגישות';
-  document.getElementById('sub').textContent='יומן פגישות';
-  const now = new Date();
-  const defaultFrom = toInputDate(new Date(now.getFullYear(), 0, 1));
-  const defaultTo = toInputDate(now);
-  document.getElementById('content').innerHTML=`
-<div class="cal-controls">
-  <input type="date" id="calFrom" value="${calFilter.from||defaultFrom}" onchange="calFilter.from=this.value">
-  <span style="color:var(--text3)">עד</span>
-  <input type="date" id="calTo" value="${calFilter.to||defaultTo}" onchange="calFilter.to=this.value">
-  <input type="text" id="calClient" placeholder="🔍 חיפוש לקוח..." value="${calFilter.client}" oninput="calFilter.client=this.value;renderCalendar()">
-  <button class="btn" style="background:#0891b2;color:#fff;border-color:#0891b2" onclick="loadCalendar()">טען</button>
-</div>
-<div class="loading">טוען נתוני יומן...</div>`;
-}
-
-function renderCalendar(){
-  const now = new Date();
-  const defaultFrom = toInputDate(new Date(now.getFullYear(), 0, 1));
-  const defaultTo = toInputDate(now);
-
-  let events = calEvents;
-  if(calFilter.client.trim()){
-    const q = calFilter.client.trim().toLowerCase();
-    events = events.filter(e => e.client.toLowerCase().includes(q));
+async function commTab(){
+  document.getElementById('content').innerHTML='<div style="text-align:center;padding:30px;color:#6b7280">טוען נתוני תקשורת... עד 30 שניות</div>';
+  try{
+    const res=await fetch('/comm');const j=await res.json();
+    if(!j.ok)throw new Error(j.error);
+    const st=j.stats;
+    document.getElementById('content').innerHTML=
+      '<div class="comm-stats">'+
+      '<div class="comm-card"><div class="comm-val c-blue">'+st.total+'</div><div class="comm-lbl">סה"כ שיחות</div></div>'+
+      '<div class="comm-card"><div class="comm-val c-green">'+st.answered+'</div><div class="comm-lbl">שיחות שנענו</div></div>'+
+      '<div class="comm-card"><div class="comm-val" style="color:var(--red)">'+st.missed+'</div><div class="comm-lbl">לא נענו</div></div>'+
+      '<div class="comm-card"><div class="comm-val c-amber">'+st.avgDuration+'</div><div class="comm-lbl">משך ממוצע</div></div>'+
+      '</div>'+
+      '<div class="card"><div class="card-title">פירוט לפי ליד</div>'+j.table+'</div>';
+  }catch(e){
+    document.getElementById('content').innerHTML='<div class="err">שגיאה: '+e.message+'</div>';
   }
-
-  const byType = {ליווי:0,'step-up':0,ייעוץ:0,שירות:0};
-  events.forEach(e=>{ if(byType[e.type]!==undefined) byType[e.type]++; });
-
-  // Group by client for client view
-  const clients = {};
-  events.forEach(e=>{
+}
+function renderCalendarShell(){
+  document.getElementById('sub').textContent='יומן פגישות';
+  const now=new Date();
+  if(!calFrom)calFrom=toISO(new Date(now.getFullYear(),0,1));
+  if(!calTo)calTo=toISO(now);
+  document.getElementById('content').innerHTML=calControlsHTML()+'<div style="text-align:center;padding:30px;color:#6b7280">טוען נתוני יומן...</div>';
+  attachSearchListener();
+}
+function calControlsHTML(){
+  return '<div class="cal-controls">'+
+    '<input type="date" id="calFrom" value="'+calFrom+'" onchange="calFrom=this.value">'+
+    '<span style="color:var(--text3)">עד</span>'+
+    '<input type="date" id="calTo" value="'+calTo+'" onchange="calTo=this.value">'+
+    '<input type="text" id="calSearch" class="cal-search" placeholder="🔍 חיפוש לקוח..." value="'+calClientFilter+'">'+
+    '<button class="btn" style="background:#0891b2;color:#fff;border-color:#0891b2" onclick="loadCalendar()">טען</button>'+
+    '</div>';
+}
+function attachSearchListener(){
+  setTimeout(function(){
+    var el=document.getElementById('calSearch');
+    if(el){el.addEventListener('input',function(){calClientFilter=this.value;renderCalendarData();});}
+  },50);
+}
+async function loadCalendar(){
+  var fromEl=document.getElementById('calFrom');
+  var toEl=document.getElementById('calTo');
+  if(fromEl)calFrom=fromEl.value;
+  if(toEl)calTo=toEl.value;
+  document.getElementById('content').innerHTML=calControlsHTML()+'<div style="text-align:center;padding:30px;color:#6b7280">טוען נתוני יומן...</div>';
+  attachSearchListener();
+  try{
+    const res=await fetch('/calendar?from='+calFrom+'&to='+calTo);
+    const j=await res.json();
+    if(!j.ok)throw new Error(j.error);
+    calEvents=j.events;
+    renderCalendarData();
+  }catch(e){
+    document.getElementById('content').innerHTML=calControlsHTML()+'<div class="err">שגיאה: '+e.message+'</div>';
+    attachSearchListener();
+  }
+}
+function renderCalendarData(){
+  var events=calEvents.slice();
+  if(calClientFilter.trim()){
+    var q=calClientFilter.trim().toLowerCase();
+    events=events.filter(function(e){return e.client.toLowerCase().includes(q);});
+  }
+  var byType={ליווי:0,'step-up':0,ייעוץ:0,שירות:0};
+  events.forEach(function(e){if(byType[e.type]!==undefined)byType[e.type]++;});
+  var clients={};
+  events.forEach(function(e){
     if(e.type==='ליווי'||e.type==='step-up'){
-      if(!clients[e.client]) clients[e.client]={ליווי:0,'step-up':0,dates:[]};
+      if(!clients[e.client])clients[e.client]={ליווי:0,'step-up':0,last:''};
       clients[e.client][e.type]++;
-      clients[e.client].dates.push(e.start);
+      if(!clients[e.client].last||e.start>clients[e.client].last)clients[e.client].last=e.start;
     }
   });
-  const clientList = Object.entries(clients).sort((a,b)=>b[1].ליווי-a[1].ליווי);
-
-  document.getElementById('content').innerHTML=`
-<div class="cal-controls">
-  <input type="date" id="calFrom" value="${calFilter.from||defaultFrom}" onchange="calFilter.from=this.value">
-  <span style="color:var(--text3)">עד</span>
-  <input type="date" id="calTo" value="${calFilter.to||defaultTo}" onchange="calFilter.to=this.value">
-  <input type="text" id="calClient" placeholder="🔍 חיפוש לקוח..." value="${calFilter.client}" oninput="calFilter.client=this.value;renderCalendar()">
-  <button class="btn" style="background:#0891b2;color:#fff;border-color:#0891b2" onclick="loadCalendar()">טען</button>
-</div>
-<div class="cal-metrics">
-  <div class="cal-metric"><div class="cal-metric-val c-blue">${byType['ליווי']}</div><div class="cal-metric-lbl">פגישות ליווי</div></div>
-  <div class="cal-metric"><div class="cal-metric-val" style="color:#dc2626">${byType['step-up']}</div><div class="cal-metric-lbl">פגישות STEP-UP</div></div>
-  <div class="cal-metric"><div class="cal-metric-val c-amber">${byType['ייעוץ']}</div><div class="cal-metric-lbl">שיחות ייעוץ</div></div>
-  <div class="cal-metric"><div class="cal-metric-val c-green">${byType['שירות']}</div><div class="cal-metric-lbl">שיחות שירות</div></div>
-</div>
-${clientList.length>0?`
-<div class="cal-client-section" style="margin-bottom:12px">
-  <div class="card-title" style="margin-bottom:8px">מעקב לקוחות ליווי</div>
-  ${clientList.map(([name,d])=>{
-    const lastDate = d.dates.sort().pop();
-    const last = lastDate ? new Date(lastDate).toLocaleDateString('he-IL') : '';
-    return `<div class="client-summary">
-      <span class="client-name">${name}</span>
-      <div class="client-stats">
-        <div class="client-stat"><div class="client-stat-val c-blue">${d['ליווי']}</div><div class="client-stat-lbl">ליווי</div></div>
-        ${d['step-up']>0?`<div class="client-stat"><div class="client-stat-val" style="color:#dc2626">${d['step-up']}</div><div class="client-stat-lbl">STEP-UP</div></div>`:''}
-        <div class="client-stat"><div class="client-stat-val" style="font-size:12px;color:var(--text2)">${last}</div><div class="client-stat-lbl">פגישה אחרונה</div></div>
-      </div>
-    </div>`;
-  }).join('')}
-</div>`:''}
-<div class="cal-table-wrap">
-  <div class="card-title" style="margin-bottom:12px">כל הפגישות (${events.length})</div>
-  <table>
-    <tr><th>תאריך</th><th>לקוח</th><th>אירוע</th><th style="text-align:center">סוג</th><th style="text-align:center">משך</th></tr>
-    ${events.length===0?'<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px">אין תוצאות</td></tr>':
-    events.sort((a,b)=>new Date(b.start)-new Date(a.start)).map(e=>`
-    <tr>
-      <td>${new Date(e.start).toLocaleDateString('he-IL')}</td>
-      <td style="font-weight:600">${e.client}</td>
-      <td style="color:var(--text2);font-size:12px">${e.summary}</td>
-      <td style="text-align:center"><span class="badge type-${e.type}">${e.type==='step-up'?'STEP-UP':e.type}</span></td>
-      <td style="text-align:center;color:var(--text2)">${e.duration} דק'</td>
-    </tr>`).join('')}
-  </table>
-</div>`;
+  var clientList=Object.entries(clients).sort(function(a,b){return b[1].ליווי-a[1].ליווי;});
+  var html=calControlsHTML()+
+    '<div class="cal-metrics">'+
+    '<div class="cal-metric"><div class="cal-metric-val c-blue">'+byType['ליווי']+'</div><div class="cal-metric-lbl">פגישות ליווי</div></div>'+
+    '<div class="cal-metric"><div class="cal-metric-val" style="color:#dc2626">'+byType['step-up']+'</div><div class="cal-metric-lbl">פגישות STEP-UP</div></div>'+
+    '<div class="cal-metric"><div class="cal-metric-val c-amber">'+byType['ייעוץ']+'</div><div class="cal-metric-lbl">שיחות ייעוץ</div></div>'+
+    '<div class="cal-metric"><div class="cal-metric-val c-green">'+byType['שירות']+'</div><div class="cal-metric-lbl">שיחות שירות</div></div>'+
+    '</div>';
+  if(clientList.length){
+    html+='<div class="client-section"><div class="card-title" style="margin-bottom:8px">מעקב לקוחות ליווי</div>';
+    clientList.forEach(function(entry){
+      var name=entry[0],d=entry[1];
+      var last=d.last?new Date(d.last).toLocaleDateString('he-IL'):'';
+      html+='<div class="client-row">'+
+        '<span class="client-name">'+name+'</span>'+
+        '<div class="client-stats">'+
+        '<div class="client-stat"><div class="client-stat-val c-blue">'+d['ליווי']+'</div><div class="client-stat-lbl">ליווי</div></div>'+
+        (d['step-up']>0?'<div class="client-stat"><div class="client-stat-val" style="color:#dc2626">'+d['step-up']+'</div><div class="client-stat-lbl">STEP-UP</div></div>':'')+
+        '<div class="client-stat"><div class="client-stat-val" style="font-size:12px;color:var(--text2)">'+last+'</div><div class="client-stat-lbl">אחרונה</div></div>'+
+        '</div></div>';
+    });
+    html+='</div>';
+  }
+  html+='<div class="cal-table-wrap"><div class="card-title" style="margin-bottom:12px">כל הפגישות ('+events.length+')</div>'+
+    '<table><tr><th>תאריך</th><th>לקוח</th><th>אירוע</th><th style="text-align:center">סוג</th><th style="text-align:center">משך</th></tr>';
+  if(!events.length){
+    html+='<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px">אין תוצאות</td></tr>';
+  } else {
+    events.sort(function(a,b){return new Date(b.start)-new Date(a.start);}).forEach(function(e){
+      html+='<tr>'+
+        '<td>'+new Date(e.start).toLocaleDateString('he-IL')+'</td>'+
+        '<td style="font-weight:600">'+e.client+'</td>'+
+        '<td style="color:var(--text2);font-size:12px">'+e.summary+'</td>'+
+        '<td style="text-align:center"><span class="badge type-'+e.type+'">'+(e.type==='step-up'?'STEP-UP':e.type)+'</span></td>'+
+        '<td style="text-align:center;color:var(--text2)">'+e.duration+' דק\'</td>'+
+        '</tr>';
+    });
+  }
+  html+='</table></div>';
+  document.getElementById('content').innerHTML=html;
+  attachSearchListener();
 }
-
 load();
 setInterval(load,5*60*1000);
 </script>
