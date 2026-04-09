@@ -87,7 +87,7 @@ tr:last-child td{border-bottom:none;}
   <div class="header">
     <div>
       <div class="header-title">לוח בקרה — ניר</div>
-      <div class="header-sub" id="sub">טוען...</div>
+      <div class="header-sub" id="sub" style="display:none"></div>
     </div>
     <div class="header-right">
       <div class="live-badge"><div class="live-dot"></div>זמן אמת</div>
@@ -396,7 +396,7 @@ function renderCalendarData(){
         '<td>'+new Date(e.start).toLocaleDateString('he-IL')+'</td>'+
         '<td style="font-weight:600">'+e.client+'</td>'+
         '<td style="color:var(--text2);font-size:12px">'+e.summary+'</td>'+
-        '<td style="text-align:center"><span class="badge type-'+e.type+'">'+(e.type==='step-up'?'STEP-UP':e.type)+'</span></td>'+
+        '<td style="text-align:center"><span class="badge type-'+e.type+'">'+(e.type==='step-up'?'STEP-UP':e.type)+'</span>'+(e.zoom?' <span style="font-size:10px;color:#0891b2">📹</span>':'')+'</td>'+
         '<td style="text-align:center;color:var(--text2)">'+e.duration+' דק\'</td>'+
         '</tr>';
     });
