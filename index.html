@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ש<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -120,7 +120,7 @@ const SRC=[
 ];
 const ADV=['נקבעה שיחה','רלוונטי-העבר למכירות','פולאו-אפ','פגישת StepUp','נמכר ליווי'];
 const MO=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
-let range='today',data={},calEvents=[],calClientFilter='',calFrom='',calTo='',customFrom='',customTo='',calSortAsc=false;
+let range='today',data={},calEvents=[],calClientFilter='',calFrom='',calTo='',customFrom='',customTo='',calSortAsc=false,calDuration=0;
 const fd=d=>d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();
 const toISO=d=>d.toISOString().split('T')[0];
 const gv=(item,col)=>item.column_values?.find(c=>c.id===col)?.text||'';
@@ -329,24 +329,42 @@ function renderCalendarShell(){
   document.getElementById('sub').textContent='יומן פגישות';
   const now=new Date();
   if(!calFrom)calFrom=toISO(new Date(now.getFullYear(),0,1));
-  if(!calTo)calTo=toISO(now);
+  if(!calTo){var fut=new Date(now);fut.setMonth(fut.getMonth()+3);calTo=toISO(fut);}
   document.getElementById('content').innerHTML=calControlsHTML()+'<div id="calData" style="text-align:center;padding:30px;color:#6b7280">טוען נתוני יומן...</div>';
   attachSearchListener();
+  // Prevent focus loss on search
+  document.getElementById('content').addEventListener('input',function(ev){
+    if(ev.target&&ev.target.id==='calSearch'){calClientFilter=ev.target.value;renderCalendarData();ev.target.focus();}
+  });
 }
 function calControlsHTML(){
+  var durs=[{v:0,l:'הכל'},{v:20,l:'20 דק' ייעוץ'},{v:30,l:'30 דק' שירות'},{v:60,l:'60 דק' ליווי'},{v:120,l:'120 דק' STEP-UP'}];
+  var durBtns=durs.map(function(d){
+    var active=calDuration===d.v;
+    return '<button class="btn" style="'+(active?'background:#0891b2;color:#fff;border-color:#0891b2;':'')+'" onclick="calDuration='+d.v+';renderCalendarData()">'+d.l+'</button>';
+  }).join('');
   return '<div class="cal-controls">'+
     '<input type="date" id="calFrom" value="'+calFrom+'" onchange="calFrom=this.value">'+
     '<span style="color:var(--text3)">עד</span>'+
     '<input type="date" id="calTo" value="'+calTo+'" onchange="calTo=this.value">'+
-    '<input type="text" id="calSearch" class="cal-search" placeholder="🔍 חיפוש לקוח..." value="'+calClientFilter+'">'+
     '<button class="btn" style="background:#0891b2;color:#fff;border-color:#0891b2" onclick="loadCalendar()">טען</button>'+
+    '</div>'+
+    '<div style="display:flex;gap:6px;align-items:center;margin-bottom:12px;flex-wrap:wrap">'+
+    '<input type="text" id="calSearch" class="cal-search" placeholder="🔍 חיפוש לקוח..." value="'+calClientFilter+'">'+
+    '<span style="color:var(--text3);font-size:12px;margin-right:4px">סנן לפי משך:</span>'+
+    durBtns+
     '</div>';
 }
 function attachSearchListener(){
   setTimeout(function(){
     var el=document.getElementById('calSearch');
-    if(el){el.addEventListener('input',function(){calClientFilter=this.value;renderCalendarData();});}
-  },50);
+    if(el){
+      el.removeEventListener('input',el._searchHandler);
+      el._searchHandler=function(){calClientFilter=this.value;renderCalendarData();};
+      el.addEventListener('input',el._searchHandler);
+      el.focus();
+    }
+  },10);
 }
 async function loadCalendar(){
   var fromEl=document.getElementById('calFrom');
@@ -374,6 +392,7 @@ async function loadCalendar(){
 }
 function renderCalendarData(){
   var events=calEvents.slice();
+  if(calDuration>0){events=events.filter(function(e){return Math.abs(e.duration-calDuration)<=5;});}
   if(calClientFilter.trim()){
     var q=calClientFilter.trim().toLowerCase();
     events=events.filter(function(e){return e.client.toLowerCase().includes(q);});
