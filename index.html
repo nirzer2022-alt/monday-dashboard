@@ -100,6 +100,7 @@ tr:last-child td{border-bottom:none;}
     <button class="tab" onclick="go('week',this)">שבוע</button>
     <button class="tab" onclick="go('month',this)">חודש זה</button>
     <button class="tab" onclick="go('compare',this)">השוואת חודשים</button>
+    <button class="tab" onclick="go('custom',this)">📆 טווח מותאם</button>
     <button class="tab" onclick="go('comm',this)">📞 תקשורת</button>
     <button class="tab cal-tab" onclick="go('calendar',this)">📅 יומן פגישות</button>
   </div>
@@ -119,16 +120,21 @@ const SRC=[
 ];
 const ADV=['נקבעה שיחה','רלוונטי-העבר למכירות','פולאו-אפ','פגישת StepUp','נמכר ליווי'];
 const MO=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
-let range='today',data={},calEvents=[],calClientFilter='',calFrom='',calTo='';
+let range='today',data={},calEvents=[],calClientFilter='',calFrom='',calTo='',customFrom='',customTo='',calSortAsc=false;
 const fd=d=>d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();
 const toISO=d=>d.toISOString().split('T')[0];
 const gv=(item,col)=>item.column_values?.find(c=>c.id===col)?.text||'';
 function getDate(item,col){if(col){const v=gv(item,col);if(v&&v.trim())return new Date(v);}return item.created_at?new Date(item.created_at):null;}
 function filter(items,r,col){
-  const now=new Date();let s;
+  const now=new Date();let s,e2;
   if(r==='today'){s=new Date(now);s.setHours(0,0,0,0);}
   else if(r==='week'){s=new Date(now);s.setDate(now.getDate()-now.getDay());s.setHours(0,0,0,0);}
   else if(r==='month'){s=new Date(now.getFullYear(),now.getMonth(),1);}
+  else if(r==='custom'&&customFrom&&customTo){
+    s=new Date(customFrom);s.setHours(0,0,0,0);
+    e2=new Date(customTo);e2.setHours(23,59,59);
+    return items.filter(i=>{const d=getDate(i,col);return d&&d>=s&&d<=e2;});
+  }
   else return items;
   return items.filter(i=>{const d=getDate(i,col);return d&&d>=s;});
 }
@@ -140,6 +146,7 @@ function label(r){
   if(r==='compare')return'השוואה בין חודשים · '+n.getFullYear();
   if(r==='comm')return'פעילות תקשורת Voicenter';
   if(r==='calendar')return'יומן פגישות';
+  if(r==='custom')return customFrom&&customTo?customFrom+' — '+customTo:'טווח מותאם';
   return '';
 }
 function setDR(r){
@@ -180,6 +187,18 @@ function render(){
   document.getElementById('sub').textContent=label(range);
   if(range==='compare'){cmp();return;}
   if(range==='comm'){commTab();return;}
+  if(range==='custom'&&(!customFrom||!customTo)){
+    document.getElementById('content').innerHTML=
+      '<div class="card" style="padding:20px">'+
+      '<div class="card-title" style="margin-bottom:12px">בחר טווח תאריכים</div>'+
+      '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'+
+      '<input type="date" id="cfrom" style="border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px">'+
+      '<span style="color:var(--text3)">עד</span>'+
+      '<input type="date" id="cto" style="border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px">'+
+      '<button class="btn" style="background:var(--blue);color:#fff;border-color:var(--blue)" onclick="applyCustom()">הצג</button>'+
+      '</div></div>';
+    return;
+  }
   const L=filter(data.leads||[],range,null);
   const S=filter(data.sales||[],range,'date_mm00jx0c');
   const T=filter(data.stepup||[],range,'date4');
@@ -311,7 +330,7 @@ function renderCalendarShell(){
   const now=new Date();
   if(!calFrom)calFrom=toISO(new Date(now.getFullYear(),0,1));
   if(!calTo)calTo=toISO(now);
-  document.getElementById('content').innerHTML=calControlsHTML()+'<div style="text-align:center;padding:30px;color:#6b7280">טוען נתוני יומן...</div>';
+  document.getElementById('content').innerHTML=calControlsHTML()+'<div id="calData" style="text-align:center;padding:30px;color:#6b7280">טוען נתוני יומן...</div>';
   attachSearchListener();
 }
 function calControlsHTML(){
@@ -334,8 +353,14 @@ async function loadCalendar(){
   var toEl=document.getElementById('calTo');
   if(fromEl)calFrom=fromEl.value;
   if(toEl)calTo=toEl.value;
-  document.getElementById('content').innerHTML=calControlsHTML()+'<div style="text-align:center;padding:30px;color:#6b7280">טוען נתוני יומן...</div>';
-  attachSearchListener();
+  // Keep controls, only update data area
+  var dataDiv=document.getElementById('calData');
+  if(!dataDiv){
+    document.getElementById('content').innerHTML=calControlsHTML()+'<div id="calData" style="text-align:center;padding:30px;color:#6b7280">טוען...</div>';
+    attachSearchListener();
+  } else {
+    dataDiv.innerHTML='<div style="text-align:center;padding:30px;color:#6b7280">טוען נתוני יומן...</div>';
+  }
   try{
     const res=await fetch('/calendar?from='+calFrom+'&to='+calTo);
     const j=await res.json();
@@ -343,8 +368,8 @@ async function loadCalendar(){
     calEvents=j.events;
     renderCalendarData();
   }catch(e){
-    document.getElementById('content').innerHTML=calControlsHTML()+'<div class="err">שגיאה: '+e.message+'</div>';
-    attachSearchListener();
+    var d2=document.getElementById('calData');
+    if(d2)d2.innerHTML='<div class="err">שגיאה: '+e.message+'</div>';
   }
 }
 function renderCalendarData(){
@@ -387,11 +412,11 @@ function renderCalendarData(){
     html+='</div>';
   }
   html+='<div class="cal-table-wrap"><div class="card-title" style="margin-bottom:12px">כל הפגישות ('+events.length+')</div>'+
-    '<table><tr><th>תאריך</th><th>לקוח</th><th>אירוע</th><th style="text-align:center">סוג</th><th style="text-align:center">משך</th></tr>';
+    '<table><tr><th style="cursor:pointer;user-select:none" onclick="calSortAsc=!calSortAsc;renderCalendarData()">תאריך '+(calSortAsc?'↑':'↓')+'</th><th>לקוח</th><th>אירוע</th><th style="text-align:center">סוג</th><th style="text-align:center">משך</th></tr>';
   if(!events.length){
     html+='<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px">אין תוצאות</td></tr>';
   } else {
-    events.sort(function(a,b){return new Date(b.start)-new Date(a.start);}).forEach(function(e){
+    events.sort(function(a,b){return calSortAsc?new Date(a.start)-new Date(b.start):new Date(b.start)-new Date(a.start);}).forEach(function(e){
       html+='<tr>'+
         '<td>'+new Date(e.start).toLocaleDateString('he-IL')+'</td>'+
         '<td style="font-weight:600">'+e.client+'</td>'+
@@ -404,6 +429,13 @@ function renderCalendarData(){
   html+='</table></div>';
   document.getElementById('content').innerHTML=html;
   attachSearchListener();
+}
+function applyCustom(){
+  var f=document.getElementById('cfrom');
+  var t=document.getElementById('cto');
+  if(!f||!t||!f.value||!t.value)return;
+  customFrom=f.value;customTo=t.value;
+  render();
 }
 load();
 setInterval(load,5*60*1000);
