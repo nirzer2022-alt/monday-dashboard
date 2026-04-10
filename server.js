@@ -150,20 +150,16 @@ function classifyEvent(event) {
 
   // Skip all-day events
   if (!event.start?.dateTime) return null;
-  // Filter: known durations ±5 min
-  const knownDuration =
-    Math.abs(duration-20)<=5 ||
-    Math.abs(duration-30)<=5 ||
-    Math.abs(duration-60)<=5 ||
-    Math.abs(duration-120)<=10;
+  // Filter: exact durations only
+  const knownDuration = duration===20 || duration===30 || duration===60 || duration===120;
   if (!knownDuration) return null;
 
-  // Classify by nearest duration
+  // Classify by exact duration
   let type = 'אחר';
-  if (Math.abs(duration-120)<=10) type = 'step-up';
-  else if (Math.abs(duration-60)<=5) type = 'ליווי';
-  else if (Math.abs(duration-30)<=5) type = 'שירות';
-  else if (Math.abs(duration-20)<=5) type = 'ייעוץ';
+  if (duration===120) type = 'step-up';
+  else if (duration===60) type = 'ליווי';
+  else if (duration===30) type = 'שירות';
+  else if (duration===20) type = 'ייעוץ';
 
   // Zoom detection
   const isZoom = summaryLower.includes('זום') || summaryLower.includes('zoom');
