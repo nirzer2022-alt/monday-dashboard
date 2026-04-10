@@ -338,10 +338,17 @@ function renderCalendarShell(){
   });
 }
 function calControlsHTML(){
-  var durs=[{v:0,l:'הכל'},{v:20,l:'ייעוץ'},{v:30,l:'שירות'},{v:60,l:'ליווי'},{v:120,l:'STEP-UP'}];
+  var durs=[
+    {v:0,l:'הכל'},
+    {v:20,l:'ייעוץ'},
+    {v:30,l:'שירות'},
+    {v:60,l:'ליווי'},
+    {v:120,l:'STEP-UP'}
+  ];
   var durBtns=durs.map(function(d){
     var active=calDuration===d.v;
-    return '<button class="btn" style="'+(active?'background:#0891b2;color:#fff;border-color:#0891b2;':'')+'" onclick="calDuration='+d.v+';renderCalendarData()">'+d.l+'</button>';
+    var style=active?'background:#0891b2;color:#fff;border-color:#0891b2;':'';
+    return '<button class="btn" style="'+style+'" onclick="calDuration='+d.v+';renderCalendarData()">'+d.l+'</button>';
   }).join('');
   return '<div class="cal-controls">'+
     '<input type="date" id="calFrom" value="'+calFrom+'" onchange="calFrom=this.value">'+
@@ -350,8 +357,8 @@ function calControlsHTML(){
     '<button class="btn" style="background:#0891b2;color:#fff;border-color:#0891b2" onclick="loadCalendar()">טען</button>'+
     '</div>'+
     '<div style="display:flex;gap:6px;align-items:center;margin-bottom:12px;flex-wrap:wrap">'+
-    '<input type="text" id="calSearch" class="cal-search" placeholder="🔍 חיפוש לקוח..." value="'+calClientFilter+'">'+
-    '<span style="color:var(--text3);font-size:12px;margin-right:4px">סנן לפי משך:</span>'+
+    '<input type="text" id="calSearch" class="cal-search" placeholder="חיפוש לקוח..." value="'+calClientFilter+'" dir="rtl" style="text-align:right">'+
+    '<span style="color:var(--text3);font-size:12px;margin-right:4px">סנן:</span>'+
     durBtns+
     '</div>';
 }
