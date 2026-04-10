@@ -332,10 +332,10 @@ function renderCalendarShell(){
   if(!calTo){var fut=new Date(now);fut.setMonth(fut.getMonth()+3);calTo=toISO(fut);}
   document.getElementById('content').innerHTML=
     '<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">'+
-    '<button class="btn" onclick="setCalRange('today')">היום</button>'+
-    '<button class="btn" onclick="setCalRange('week')">שבוע</button>'+
-    '<button class="btn" onclick="setCalRange('month')">חודש זה</button>'+
-    '<button class="btn" onclick="setCalRange('year')">השנה</button>'+
+    '<button class="btn" onclick="setCalRange(&quot;today&quot;)">היום</button>'+
+    '<button class="btn" onclick="setCalRange(&quot;week&quot;)">שבוע</button>'+
+    '<button class="btn" onclick="setCalRange(&quot;month&quot;)">חודש זה</button>'+
+    '<button class="btn" onclick="setCalRange(&quot;year&quot;)">השנה</button>'+
     '</div>'+
     '<div class="cal-controls">'+
     '<input type="date" id="calFrom" value="'+calFrom+'" onchange="calFrom=this.value">'+
