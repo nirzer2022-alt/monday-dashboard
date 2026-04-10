@@ -146,16 +146,15 @@ function classifyEvent(event) {
   const summary = event.summary || '';
   const summaryLower = summary.toLowerCase();
 
-  // Filter: must contain פגישה or שיחה
-  if (!summary.includes('פגישה') && !summary.includes('שיחה')) return null;
-
-  // Filter: must be a known duration
+  // Filter: only known durations (20/30/60/120 min ±5)
   const knownDuration =
     Math.abs(duration - 20) <= 5 ||
     Math.abs(duration - 30) <= 5 ||
     Math.abs(duration - 60) <= 5 ||
     Math.abs(duration - 120) <= 5;
   if (!knownDuration) return null;
+  // Skip all-day events
+  if (!event.start?.dateTime) return null;
 
   // Classify by duration
   let type = 'אחר';
