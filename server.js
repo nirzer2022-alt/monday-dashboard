@@ -146,22 +146,18 @@ function classifyEvent(event) {
   const summary = event.summary || '';
   const summaryLower = summary.toLowerCase();
 
-  // Filter: only known durations (20/30/60/120 min ±5)
-  const knownDuration =
-    Math.abs(duration - 20) <= 5 ||
-    Math.abs(duration - 30) <= 5 ||
-    Math.abs(duration - 60) <= 5 ||
-    Math.abs(duration - 120) <= 5;
-  if (!knownDuration) return null;
   // Skip all-day events
   if (!event.start?.dateTime) return null;
+  // Filter: only exact durations (20/30/60/120 min)
+  const knownDuration = duration===20 || duration===30 || duration===60 || duration===120;
+  if (!knownDuration) return null;
 
-  // Classify by duration
+  // Classify by exact duration
   let type = 'אחר';
-  if (Math.abs(duration - 60) <= 5) type = 'ליווי';
-  else if (Math.abs(duration - 120) <= 5) type = 'step-up';
-  else if (Math.abs(duration - 20) <= 5) type = 'ייעוץ';
-  else if (Math.abs(duration - 30) <= 5) type = 'שירות';
+  if (duration === 60) type = 'ליווי';
+  else if (duration === 120) type = 'step-up';
+  else if (duration === 20) type = 'ייעוץ';
+  else if (duration === 30) type = 'שירות';
 
   // Zoom detection
   const isZoom = summaryLower.includes('זום') || summaryLower.includes('zoom');
