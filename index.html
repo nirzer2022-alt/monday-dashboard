@@ -338,7 +338,7 @@ function renderCalendarShell(){
   });
 }
 function calControlsHTML(){
-  var durs=[{v:0,l:'הכל'},{v:20,l:'ייעוץ 20 דק\'},{v:30,l:'שירות 30 דק\'},{v:60,l:'ליווי 60 דק\'},{v:120,l:'STEP-UP'}];
+  var durs=[{v:0,l:'הכל'},{v:20,l:'20 דק' ייעוץ'},{v:30,l:'30 דק' שירות'},{v:60,l:'60 דק' ליווי'},{v:120,l:'120 דק' STEP-UP'}];
   var durBtns=durs.map(function(d){
     var active=calDuration===d.v;
     return '<button class="btn" style="'+(active?'background:#0891b2;color:#fff;border-color:#0891b2;':'')+'" onclick="calDuration='+d.v+';renderCalendarData()">'+d.l+'</button>';
