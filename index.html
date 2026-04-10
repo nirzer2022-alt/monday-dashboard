@@ -330,12 +330,24 @@ function renderCalendarShell(){
   const now=new Date();
   if(!calFrom)calFrom=toISO(new Date(now.getFullYear(),0,1));
   if(!calTo){var fut=new Date(now);fut.setMonth(fut.getMonth()+3);calTo=toISO(fut);}
-  document.getElementById('content').innerHTML=calControlsHTML()+'<div id="calData" style="text-align:center;padding:30px;color:#6b7280">טוען נתוני יומן...</div>';
-  attachSearchListener();
-  // Prevent focus loss on search
-  document.getElementById('content').addEventListener('input',function(ev){
-    if(ev.target&&ev.target.id==='calSearch'){calClientFilter=ev.target.value;renderCalendarData();ev.target.focus();}
-  });
+  document.getElementById('content').innerHTML=
+    '<div class="cal-controls">'+
+    '<input type="date" id="calFrom" value="'+calFrom+'" onchange="calFrom=this.value">'+
+    '<span style="color:var(--text3)">עד</span>'+
+    '<input type="date" id="calTo" value="'+calTo+'" onchange="calTo=this.value">'+
+    '<button class="btn" style="background:#0891b2;color:#fff;border-color:#0891b2" onclick="loadCalendar()">טען</button>'+
+    '</div>'+
+    '<div style="display:flex;gap:6px;align-items:center;margin-bottom:12px;flex-wrap:wrap">'+
+    '<input type="search" id="calSearch" class="cal-search" placeholder="חיפוש לקוח...">'+
+    '<span style="color:var(--text3);font-size:12px">סנן:</span>'+
+    '<button class="btn" id="durAll" onclick="calDuration=0;renderCalendarData()">הכל</button>'+
+    '<button class="btn" id="dur20" onclick="calDuration=20;renderCalendarData()">ייעוץ</button>'+
+    '<button class="btn" id="dur30" onclick="calDuration=30;renderCalendarData()">שירות</button>'+
+    '<button class="btn" id="dur60" onclick="calDuration=60;renderCalendarData()">ליווי</button>'+
+    '<button class="btn" id="dur120" onclick="calDuration=120;renderCalendarData()">STEP-UP</button>'+
+    '</div>'+
+    '<div id="calData" style="text-align:center;padding:30px;color:#6b7280">טוען נתוני יומן...</div>';
+  document.getElementById('calSearch').addEventListener('input',function(){calClientFilter=this.value;renderCalendarData();});
 }
 function calControlsHTML(){
   var durs=[
@@ -378,14 +390,8 @@ async function loadCalendar(){
   var toEl=document.getElementById('calTo');
   if(fromEl)calFrom=fromEl.value;
   if(toEl)calTo=toEl.value;
-  // Keep controls, only update data area
   var dataDiv=document.getElementById('calData');
-  if(!dataDiv){
-    document.getElementById('content').innerHTML=calControlsHTML()+'<div id="calData" style="text-align:center;padding:30px;color:#6b7280">טוען...</div>';
-    attachSearchListener();
-  } else {
-    dataDiv.innerHTML='<div style="text-align:center;padding:30px;color:#6b7280">טוען נתוני יומן...</div>';
-  }
+  if(dataDiv){dataDiv.innerHTML='<div style="text-align:center;padding:30px;color:#6b7280">טוען נתוני יומן...</div>';}
   try{
     const res=await fetch('/calendar?from='+calFrom+'&to='+calTo);
     const j=await res.json();
@@ -415,8 +421,13 @@ function renderCalendarData(){
     }
   });
   var clientList=Object.entries(clients).sort(function(a,b){return b[1].ליווי-a[1].ליווי;});
-  var html=calControlsHTML()+
-    '<div class="cal-metrics">'+
+  // Update duration button styles
+  ['durAll','dur20','dur30','dur60','dur120'].forEach(function(id,i){
+    var el=document.getElementById(id);
+    var vals=[0,20,30,60,120];
+    if(el){el.style.background=calDuration===vals[i]?'#0891b2':'';el.style.color=calDuration===vals[i]?'#fff':'';el.style.borderColor=calDuration===vals[i]?'#0891b2':'';}
+  });
+  var html='<div class="cal-metrics">'+
     '<div class="cal-metric"><div class="cal-metric-val c-blue">'+byType['ליווי']+'</div><div class="cal-metric-lbl">פגישות ליווי</div></div>'+
     '<div class="cal-metric"><div class="cal-metric-val" style="color:#dc2626">'+byType['step-up']+'</div><div class="cal-metric-lbl">פגישות STEP-UP</div></div>'+
     '<div class="cal-metric"><div class="cal-metric-val c-amber">'+byType['ייעוץ']+'</div><div class="cal-metric-lbl">שיחות ייעוץ</div></div>'+
@@ -453,8 +464,8 @@ function renderCalendarData(){
     });
   }
   html+='</table></div>';
-  document.getElementById('content').innerHTML=html;
-  attachSearchListener();
+  var dd=document.getElementById('calData');
+  if(dd)dd.innerHTML=html;
 }
 function applyCustom(){
   var f=document.getElementById('cfrom');
