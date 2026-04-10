@@ -8,6 +8,8 @@ const PORT = process.env.PORT || 3000;
 // Google Calendar Service Account credentials from environment variable
 const CALENDAR_CREDS = process.env.GOOGLE_CREDENTIALS ? JSON.parse(process.env.GOOGLE_CREDENTIALS) : null;
 const CALENDAR_ID = process.env.CALENDAR_ID || 'nirzer2022@gmail.com';
+const CALENDAR_ID_STEPUP = '3fafd7868d8f30ef280cf29ecbd74ef79f75ba465c6c0b488145246726bae0e7@group.calendar.google.com';
+const CALENDAR_ID_CONSULT = '96776edd0002b6adf80277d291cc40ca40f5c49b0e37f390226ca1758fc4055a@group.calendar.google.com';
 
 const BOARDS = {
   leads:    { id: 9949694708, cols: ['lead_status', 'color_mkvd5y1g'] },
@@ -148,16 +150,20 @@ function classifyEvent(event) {
 
   // Skip all-day events
   if (!event.start?.dateTime) return null;
-  // Filter: only exact durations (20/30/60/120 min)
-  const knownDuration = duration===20 || duration===30 || duration===60 || duration===120;
+  // Filter: known durations ±5 min
+  const knownDuration =
+    Math.abs(duration-20)<=5 ||
+    Math.abs(duration-30)<=5 ||
+    Math.abs(duration-60)<=5 ||
+    Math.abs(duration-120)<=10;
   if (!knownDuration) return null;
 
-  // Classify by exact duration
+  // Classify by nearest duration
   let type = 'אחר';
-  if (duration === 60) type = 'ליווי';
-  else if (duration === 120) type = 'step-up';
-  else if (duration === 20) type = 'ייעוץ';
-  else if (duration === 30) type = 'שירות';
+  if (Math.abs(duration-120)<=10) type = 'step-up';
+  else if (Math.abs(duration-60)<=5) type = 'ליווי';
+  else if (Math.abs(duration-30)<=5) type = 'שירות';
+  else if (Math.abs(duration-20)<=5) type = 'ייעוץ';
 
   // Zoom detection
   const isZoom = summaryLower.includes('זום') || summaryLower.includes('zoom');
@@ -181,8 +187,16 @@ function classifyEvent(event) {
 async function getCalendarData(timeMin, timeMax) {
   if (!CALENDAR_CREDS) throw new Error('GOOGLE_CREDENTIALS not set');
   const token = await getGoogleToken(CALENDAR_CREDS);
-  const result = await fetchCalendarEvents(token, CALENDAR_ID, timeMin, timeMax);
-  const events = (result.items || []).filter(e => e.status !== 'cancelled');
+  const [r1, r2, r3] = await Promise.all([
+    fetchCalendarEvents(token, CALENDAR_ID, timeMin, timeMax),
+    fetchCalendarEvents(token, CALENDAR_ID_STEPUP, timeMin, timeMax),
+    fetchCalendarEvents(token, CALENDAR_ID_CONSULT, timeMin, timeMax),
+  ]);
+  const events = [
+    ...(r1.items || []).filter(e => e.status !== 'cancelled'),
+    ...(r2.items || []).filter(e => e.status !== 'cancelled'),
+    ...(r3.items || []).filter(e => e.status !== 'cancelled'),
+  ];
   return events.map(classifyEvent).filter(e => e !== null);
 }
 
