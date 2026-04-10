@@ -331,6 +331,12 @@ function renderCalendarShell(){
   if(!calFrom)calFrom=toISO(new Date(now.getFullYear(),0,1));
   if(!calTo){var fut=new Date(now);fut.setMonth(fut.getMonth()+3);calTo=toISO(fut);}
   document.getElementById('content').innerHTML=
+    '<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">'+
+    '<button class="btn" onclick="setCalRange('today')">היום</button>'+
+    '<button class="btn" onclick="setCalRange('week')">שבוע</button>'+
+    '<button class="btn" onclick="setCalRange('month')">חודש זה</button>'+
+    '<button class="btn" onclick="setCalRange('year')">השנה</button>'+
+    '</div>'+
     '<div class="cal-controls">'+
     '<input type="date" id="calFrom" value="'+calFrom+'" onchange="calFrom=this.value">'+
     '<span style="color:var(--text3)">עד</span>'+
@@ -466,6 +472,27 @@ function renderCalendarData(){
   html+='</table></div>';
   var dd=document.getElementById('calData');
   if(dd)dd.innerHTML=html;
+}
+function setCalRange(r){
+  var now=new Date();
+  if(r==='today'){calFrom=toISO(now);calTo=toISO(now);}
+  else if(r==='week'){
+    var s=new Date(now);s.setDate(now.getDate()-now.getDay());
+    var e=new Date(s);e.setDate(s.getDate()+6);
+    calFrom=toISO(s);calTo=toISO(e);
+  }
+  else if(r==='month'){
+    calFrom=toISO(new Date(now.getFullYear(),now.getMonth(),1));
+    var fut=new Date(now);fut.setMonth(fut.getMonth()+1);calTo=toISO(fut);
+  }
+  else if(r==='year'){
+    calFrom=toISO(new Date(now.getFullYear(),0,1));
+    var fut2=new Date(now);fut2.setMonth(fut2.getMonth()+3);calTo=toISO(fut2);
+  }
+  // Update date inputs
+  var f=document.getElementById('calFrom');var t=document.getElementById('calTo');
+  if(f)f.value=calFrom;if(t)t.value=calTo;
+  loadCalendar();
 }
 function applyCustom(){
   var f=document.getElementById('cfrom');
