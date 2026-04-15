@@ -272,11 +272,32 @@ function srcTable(sm,total){
   return '<table><tr><th>מקור</th><th style="text-align:center">קשר</th><th style="text-align:center">ייעוץ</th><th style="text-align:center">STEP-UP</th><th style="text-align:center">ליווי</th><th style="text-align:center">המרה</th></tr>'+rows+'</table>';
 }
 function coach(items){
-  const active=items.filter(function(i){return gv(i,'status')==='פעיל';});
-  if(!active.length)return '<div style="color:#9ca3af;font-size:13px;text-align:center;padding:16px 0">אין ליוויים פעילים</div>';
-  let h='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">';
-  active.forEach(function(i){h+='<div style="background:var(--bg3);border-radius:8px;padding:10px 12px"><div style="font-weight:600;font-size:13px;margin-bottom:4px">'+i.name+'</div><div style="font-size:11px;color:var(--green)">פעיל</div></div>';});
-  return h+'</div>';
+  // Show loading state, fetch from /coaching endpoint
+  fetch('/coaching').then(function(r){return r.json();}).then(function(j){
+    var el=document.getElementById('coachingDiv');
+    if(!el)return;
+    if(!j.ok){el.innerHTML='<div style="color:#dc2626;font-size:13px">שגיאה: '+j.error+'</div>';return;}
+    if(!j.clients.length){el.innerHTML='<div style="color:#9ca3af;font-size:13px;text-align:center;padding:16px 0">אין ליוויים פעילים</div>';return;}
+    var h='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">';
+    j.clients.forEach(function(c){
+      var alertStyle=c.alert?'border:2px solid #dc2626;':'';
+      var remaining=c.remaining!==null?c.remaining:'?';
+      var remColor=c.alert?'color:#dc2626':'color:#16a34a';
+      h+='<div style="background:var(--bg3);border-radius:8px;padding:10px 12px;'+alertStyle+'">'+
+        '<div style="font-weight:600;font-size:13px;margin-bottom:6px">'+c.name+'</div>'+
+        '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2)">'+
+        '<span>בוצעו: <b>'+c.done+'</b></span>'+
+        '<span>נרכשו: <b>'+(c.purchased||'?')+'</b></span>'+
+        '</div>'+
+        '<div style="margin-top:4px;font-size:12px;font-weight:600;'+remColor+'">נשארו: '+remaining+(c.alert?' ⚠️':'')+'</div>'+
+        '</div>';
+    });
+    el.innerHTML=h+'</div>';
+  }).catch(function(e){
+    var el=document.getElementById('coachingDiv');
+    if(el)el.innerHTML='<div style="color:#9ca3af;font-size:13px">טוען...</div>';
+  });
+  return '<div id="coachingDiv" style="color:#9ca3af;font-size:13px;text-align:center;padding:8px">טוען ליוויים...</div>';
 }
 function cmp(){
   const now=new Date();const md=[];
@@ -332,10 +353,10 @@ function renderCalendarShell(){
   if(!calTo){var fut=new Date(now);fut.setMonth(fut.getMonth()+3);calTo=toISO(fut);}
   document.getElementById('content').innerHTML=
     '<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">'+
-    '<button class="btn" onclick="setCalRange(&quot;today&quot;)">היום</button>'+
-    '<button class="btn" onclick="setCalRange(&quot;week&quot;)">שבוע</button>'+
-    '<button class="btn" onclick="setCalRange(&quot;month&quot;)">חודש זה</button>'+
-    '<button class="btn" onclick="setCalRange(&quot;year&quot;)">השנה</button>'+
+    '<button class="btn" onclick="setCalRange(this.dataset.r)" data-r="today">היום</button>'+
+    '<button class="btn" onclick="setCalRange(this.dataset.r)" data-r="week">שבוע</button>'+
+    '<button class="btn" onclick="setCalRange(this.dataset.r)" data-r="month">חודש זה</button>'+
+    '<button class="btn" onclick="setCalRange(this.dataset.r)" data-r="year">השנה</button>'+
     '</div>'+
     '<div class="cal-controls">'+
     '<input type="date" id="calFrom" value="'+calFrom+'" onchange="calFrom=this.value">'+
