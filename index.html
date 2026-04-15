@@ -95,7 +95,7 @@ tr:last-child td{border-bottom:none;}
       <button class="btn" onclick="reload()">⟳ רענן</button>
     </div>
   </div>
-  <div class="tabs">
+  <div class="tabs" id="mainTabs">
     <button class="tab active" onclick="go('today',this)">היום</button>
     <button class="tab" onclick="go('week',this)">שבוע</button>
     <button class="tab" onclick="go('month',this)">חודש זה</button>
@@ -103,6 +103,13 @@ tr:last-child td{border-bottom:none;}
     <button class="tab" onclick="go('custom',this)">📆 טווח מותאם</button>
     <button class="tab" onclick="go('comm',this)">📞 תקשורת</button>
     <button class="tab cal-tab" onclick="go('calendar',this)">📅 יומן פגישות</button>
+  </div>
+  <div class="tabs" id="calTabs" style="display:none">
+    <button class="tab cal-tab active" onclick="setCalRange(this.dataset.r)" data-r="today">היום</button>
+    <button class="tab cal-tab" onclick="setCalRange(this.dataset.r)" data-r="week">שבוע זה</button>
+    <button class="tab cal-tab" onclick="setCalRange(this.dataset.r)" data-r="month">חודש זה</button>
+    <button class="tab cal-tab" onclick="setCalRange(this.dataset.r)" data-r="year">מתחילת השנה</button>
+    <button class="tab" onclick="go('today',document.querySelector('#mainTabs .tab'))">← חזור לדשבורד</button>
   </div>
   <div class="date-range" id="dr" style="display:none"></div>
   <div id="err" class="err" style="display:none"></div>
@@ -180,8 +187,18 @@ function go(r,el){
   el.classList.add('active');
   range=r;
   setDR(r);
-  if(r==='calendar'){renderCalendarShell();loadCalendar();}
-  else render();
+  // Hide/show main tabs based on mode
+  var mainTabs=document.getElementById('mainTabs');
+  var calTabs=document.getElementById('calTabs');
+  if(r==='calendar'){
+    if(mainTabs)mainTabs.style.display='none';
+    if(calTabs)calTabs.style.display='flex';
+    renderCalendarShell();loadCalendar();
+  } else {
+    if(mainTabs)mainTabs.style.display='flex';
+    if(calTabs)calTabs.style.display='none';
+    render();
+  }
 }
 function render(){
   document.getElementById('sub').textContent=label(range);
@@ -373,12 +390,7 @@ function renderCalendarShell(){
   if(!calFrom)calFrom=toISO(new Date(now.getFullYear(),0,1));
   if(!calTo){var fut=new Date(now);fut.setMonth(fut.getMonth()+3);calTo=toISO(fut);}
   document.getElementById('content').innerHTML=
-    '<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">'+
-    '<button class="btn" onclick="setCalRange(this.dataset.r)" data-r="today">היום</button>'+
-    '<button class="btn" onclick="setCalRange(this.dataset.r)" data-r="week">שבוע זה</button>'+
-    '<button class="btn" onclick="setCalRange(this.dataset.r)" data-r="month">חודש זה</button>'+
-    '<button class="btn" onclick="setCalRange(this.dataset.r)" data-r="year">מתחילת השנה</button>'+
-    '</div>'+
+
     '<div class="cal-controls">'+
     '<input type="date" id="calFrom" value="'+calFrom+'" onchange="calFrom=this.value">'+
     '<span style="color:var(--text3)">עד</span>'+
