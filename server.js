@@ -236,9 +236,25 @@ const server = http.createServer(async (req, res) => {
   if (req.url === '/coaching') {
     try {
       // Get active coaching clients from Monday
-      const mondayRes = await fetchMonday(mondayQuery(9949694755, ['status','numeric_mky8ze04']));
-      const allClients = mondayRes.data?.boards?.[0]?.items_page?.items || [];
-      const active = allClients.filter(i => {
+      const coachingQuery = `{
+        boards(ids: 9949694755) {
+          groups {
+            id title
+            items_page(limit: 100) {
+              items {
+                id name
+                column_values(ids: ["status","numeric_mky8ze04"]) { id text }
+              }
+            }
+          }
+        }
+      }`;
+      const mondayRes = await fetchMonday(coachingQuery);
+      const groups = mondayRes.data?.boards?.[0]?.groups || [];
+      const allClients = groups.flatMap(g => g.items_page?.items || []);
+      // Filter by group - active coaching group
+      const activeGroup = groups.find(g => g.id === 'new_group29179' || g.title === 'ליווי פעיל');
+      const active = activeGroup ? (activeGroup.items_page?.items || []) : allClients.filter(i => {
         const status = i.column_values?.find(c=>c.id==='status')?.text||'';
         return status === 'פעיל';
       });
