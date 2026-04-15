@@ -15,7 +15,7 @@ const BOARDS = {
   leads:    { id: 9949694708, cols: ['lead_status', 'color_mkvd5y1g'] },
   sales:    { id: 9949694887, cols: ['lead_status'] },
   stepup:   { id: 9950584665, cols: ['lead_status'] },
-  coaching: { id: 9949694755, cols: ['status'] },
+  coaching: { id: 9949694755, cols: ['status', 'numeric_mky8ze04'] },
   sessions: { id: 9950821064, cols: ['status'] },
 };
 
@@ -226,6 +226,61 @@ const server = http.createServer(async (req, res) => {
       const events = await getCalendarData(timeMin, timeMax);
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ ok: true, events }));
+    } catch(e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: e.message }));
+    }
+    return;
+  }
+
+  if (req.url === '/coaching') {
+    try {
+      // Get active coaching clients from Monday
+      const mondayRes = await fetchMonday(mondayQuery(9949694755, ['status','numeric_mky8ze04']));
+      const allClients = mondayRes.data?.boards?.[0]?.items_page?.items || [];
+      const active = allClients.filter(i => {
+        const status = i.column_values?.find(c=>c.id==='status')?.text||'';
+        return status === 'פעיל';
+      });
+
+      // Get calendar events for this year from all calendars
+      const now = new Date();
+      const yearStart = new Date(now.getFullYear(), 0, 1);
+      const token = await getGoogleToken(CALENDAR_CREDS);
+      const [r1,r2,r3] = await Promise.all([
+        fetchCalendarEvents(token, CALENDAR_ID, yearStart, now),
+        fetchCalendarEvents(token, CALENDAR_ID_STEPUP, yearStart, now),
+        fetchCalendarEvents(token, CALENDAR_ID_CONSULT, yearStart, now),
+      ]);
+      const allEvents = [
+        ...(r1.items||[]), ...(r2.items||[]), ...(r3.items||[])
+      ].filter(e=>e.status!=='cancelled').map(classifyEvent).filter(e=>e&&e.type==='ליווי');
+
+      // Count sessions per client name
+      const sessionCount = {};
+      allEvents.forEach(e => {
+        const name = e.client;
+        sessionCount[name] = (sessionCount[name]||0) + 1;
+      });
+
+      // Build response
+      const clients = active.map(i => {
+        const purchased = parseInt(i.column_values?.find(c=>c.id==='numeric_mky8ze04')?.text||'0')||0;
+        // Try to match by name
+        let done = 0;
+        Object.entries(sessionCount).forEach(([calName, count]) => {
+          if(i.name.includes(calName) || calName.includes(i.name) ||
+             i.name.split(' ')[0]===calName.split(' ')[0]) {
+            done = Math.max(done, count);
+          }
+        });
+        const remaining = purchased > 0 ? purchased - done : null;
+        const alert = remaining !== null && remaining <= 2;
+        return { name: i.name, purchased, done, remaining, alert };
+      });
+
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: true, clients }));
     } catch(e) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ ok: false, error: e.message }));
