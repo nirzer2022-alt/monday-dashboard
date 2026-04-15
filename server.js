@@ -261,7 +261,7 @@ const server = http.createServer(async (req, res) => {
 
       // Get calendar events for this year from all calendars
       const now = new Date();
-      const yearStart = new Date(now.getFullYear(), 0, 1);
+      const yearStart = new Date('2024-06-01');
       const token = await getGoogleToken(CALENDAR_CREDS);
       const [r1,r2,r3] = await Promise.all([
         fetchCalendarEvents(token, CALENDAR_ID, yearStart, now),
