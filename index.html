@@ -190,11 +190,8 @@ function render(){
   if(range==='custom'&&(!customFrom||!customTo)){
     // Fetch active coaching count for metric card
   fetch('/coaching').then(function(r){return r.json();}).then(function(j){
-    var el=document.getElementById('activeCoachingMc');
-    if(el&&j.ok){
-      var val=el.querySelector('.mc-value');
-      if(val)val.textContent=j.clients.length;
-    }
+    var el=document.getElementById('activeCoachingCount');
+    if(el&&j.ok){el.textContent=j.clients.length;}
   }).catch(function(){});
   document.getElementById('content').innerHTML=
       '<div class="card" style="padding:20px">'+
@@ -290,9 +287,9 @@ function coach(items){
     // Header row
     h='<table style="width:100%"><tr>'+
       '<th style="text-align:right;color:var(--text3);font-size:11px;padding:6px 8px;border-bottom:1px solid var(--border)">שם</th>'+
-      '<th style="text-align:center;color:var(--text3);font-size:11px;padding:6px 8px;border-bottom:1px solid var(--border)">בוצעו</th>'+
       '<th style="text-align:center;color:var(--text3);font-size:11px;padding:6px 8px;border-bottom:1px solid var(--border)">נרכשו</th>'+
-      '<th style="text-align:center;color:var(--text3);font-size:11px;padding:6px 8px;border-bottom:1px solid var(--border)">נשארו</th>'+
+      '<th style="text-align:center;color:var(--text3);font-size:11px;padding:6px 8px;border-bottom:1px solid var(--border)">בוצעו</th>'+
+      '<th style="text-align:center;color:var(--text3);font-size:11px;padding:6px 8px;border-bottom:1px solid var(--border)">יתרה</th>'+
       '<th style="text-align:right;color:var(--text3);font-size:11px;padding:6px 8px;border-bottom:1px solid var(--border)">התקדמות</th>'+
       '</tr>';
     j.clients.forEach(function(c){
@@ -304,8 +301,8 @@ function coach(items){
       var rowBg=c.alert?'background:#fff5f5':'';
       h+='<tr style="'+rowBg+';border-bottom:1px solid var(--bg3)">'+
         '<td style="padding:10px 8px;font-weight:600;font-size:13px">'+(c.alert?'⚠️ ':'')+c.name+'</td>'+
-        '<td style="text-align:center;padding:10px 8px;font-size:14px;font-weight:700;color:#2563eb">'+c.done+'</td>'+
         '<td style="text-align:center;padding:10px 8px;font-size:13px;color:var(--text2)">'+(purchased||'?')+'</td>'+
+        '<td style="text-align:center;padding:10px 8px;font-size:14px;font-weight:700;color:#2563eb">'+c.done+'</td>'+
         '<td style="text-align:center;padding:10px 8px;font-size:13px;'+remColor+'">'+remaining+'</td>'+
         '<td style="padding:10px 8px;min-width:100px">'+
         '<div style="height:6px;background:var(--bg3);border-radius:3px">'+
@@ -376,11 +373,11 @@ function renderCalendarShell(){
   if(!calFrom)calFrom=toISO(new Date(now.getFullYear(),0,1));
   if(!calTo){var fut=new Date(now);fut.setMonth(fut.getMonth()+3);calTo=toISO(fut);}
   document.getElementById('content').innerHTML=
-    '<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">'+
+    '<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">'+
     '<button class="btn" onclick="setCalRange(this.dataset.r)" data-r="today">היום</button>'+
-    '<button class="btn" onclick="setCalRange(this.dataset.r)" data-r="week">שבוע</button>'+
+    '<button class="btn" onclick="setCalRange(this.dataset.r)" data-r="week">שבוע זה</button>'+
     '<button class="btn" onclick="setCalRange(this.dataset.r)" data-r="month">חודש זה</button>'+
-    '<button class="btn" onclick="setCalRange(this.dataset.r)" data-r="year">השנה</button>'+
+    '<button class="btn" onclick="setCalRange(this.dataset.r)" data-r="year">מתחילת השנה</button>'+
     '</div>'+
     '<div class="cal-controls">'+
     '<input type="date" id="calFrom" value="'+calFrom+'" onchange="calFrom=this.value">'+
