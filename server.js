@@ -164,9 +164,19 @@ function classifyEvent(event) {
   // Zoom detection
   const isZoom = summaryLower.includes('זום') || summaryLower.includes('zoom');
 
-  // Extract client name - split on " - " or " — " (dash with spaces)
-  const dashMatch = summary.match(/^(.+?)\s[-—]\s/);
-  let namePart = dashMatch ? dashMatch[1].trim() : summary.trim();
+  // Extract client name - split on dash (with or without spaces)
+  const dashIdx = summary.indexOf(' - ');
+  const longDashIdx = summary.indexOf(' — ');
+  let namePart;
+  if(dashIdx > 0) {
+    namePart = summary.slice(0, dashIdx).trim();
+  } else if(longDashIdx > 0) {
+    namePart = summary.slice(0, longDashIdx).trim();
+  } else {
+    // Try plain dash
+    const plainDash = summary.indexOf('-');
+    namePart = plainDash > 0 ? summary.slice(0, plainDash).trim() : summary.trim();
+  }
 
   return {
     id: event.id,
