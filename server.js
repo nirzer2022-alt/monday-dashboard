@@ -164,9 +164,9 @@ function classifyEvent(event) {
   // Zoom detection
   const isZoom = summaryLower.includes('זום') || summaryLower.includes('zoom');
 
-  // Extract client name - split on any dash variant
-  const dashIdx = summary.search(/[-—]/);
-  let namePart = dashIdx > 0 ? summary.slice(0, dashIdx).trim() : summary.trim();
+  // Extract client name - split on " - " or " — " (dash with spaces)
+  const dashMatch = summary.match(/^(.+?)\s[-—]\s/);
+  let namePart = dashMatch ? dashMatch[1].trim() : summary.trim();
 
   return {
     id: event.id,
