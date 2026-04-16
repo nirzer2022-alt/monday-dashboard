@@ -302,12 +302,13 @@ const server = http.createServer(async (req, res) => {
         let last = '';
         Object.entries(sessionCount).forEach(([calName, count]) => {
           const calFirst = calName.split(' ')[0];
-          // Strict matching: exact name, or cal name is exactly the monday first name
-          const exactMatch = mondayName===calName;
-          const firstNameMatch = mondayFirst.length >= 3 && calName===mondayFirst;
-          const containsMatch = mondayName.length >= 3 && calName.length >= 3 && 
-                                (mondayName===calName || calName===mondayFirst);
-          if(exactMatch || firstNameMatch || containsMatch) {
+          // Match if: exact same name, OR monday name contains cal name, OR cal name equals monday first name
+          const match = 
+            mondayName === calName ||                          // exact: "קארין" === "קארין"
+            mondayName.includes(calName) ||                   // "נירן חברון".includes("נירן") 
+            calName === mondayFirst ||                         // "נירן" === "נירן" (first name of "נירן חברון")
+            (calFirst.length >= 3 && calFirst === mondayFirst); // first names match (both 3+ chars)
+          if(match) {
             done += count;
             const l = sessionLast[calName] || '';
             if(l && (!last || l > last)) last = l;
