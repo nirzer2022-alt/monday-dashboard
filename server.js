@@ -262,7 +262,7 @@ const server = http.createServer(async (req, res) => {
 
       // Get calendar events for this year from all calendars
       const now = new Date();
-      const yearStart = new Date('2025-01-01');
+      const yearStart = new Date('2024-06-01');
       const token = await getGoogleToken(CALENDAR_CREDS);
       const [r1,r2,r3] = await Promise.all([
         fetchCalendarEvents(token, CALENDAR_ID, yearStart, now),
@@ -302,10 +302,12 @@ const server = http.createServer(async (req, res) => {
         let last = '';
         Object.entries(sessionCount).forEach(([calName, count]) => {
           const calFirst = calName.split(' ')[0];
-          const exactMatch = mondayName===calName || mondayName.includes(calName) || calName.includes(mondayName);
-          // Only match first name if it's more than 2 chars (avoid single letter matches)
-          const firstMatch = mondayFirst.length > 2 && calFirst.length > 2 && mondayFirst===calFirst;
-          if(exactMatch || firstMatch) {
+          // Strict matching: exact name, or cal name is exactly the monday first name
+          const exactMatch = mondayName===calName;
+          const firstNameMatch = mondayFirst.length >= 3 && calName===mondayFirst;
+          const containsMatch = mondayName.length >= 3 && calName.length >= 3 && 
+                                (mondayName===calName || calName===mondayFirst);
+          if(exactMatch || firstNameMatch || containsMatch) {
             done += count;
             const l = sessionLast[calName] || '';
             if(l && (!last || l > last)) last = l;
