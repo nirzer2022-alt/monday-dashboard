@@ -153,7 +153,13 @@ function label(r){
   if(r==='compare')return'השוואה בין חודשים · '+n.getFullYear();
   if(r==='comm')return'פעילות תקשורת Voicenter';
   if(r==='calendar')return'יומן פגישות';
-  if(r==='custom')return customFrom&&customTo?customFrom+' — '+customTo:'טווח מותאם';
+  if(r==='custom'){
+    if(customFrom&&customTo){
+      var f=new Date(customFrom),t=new Date(customTo);
+      return fd(f)+' — '+fd(t);
+    }
+    return 'טווח מותאם';
+  }
   return '';
 }
 function setDR(r){
