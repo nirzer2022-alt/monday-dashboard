@@ -262,7 +262,7 @@ const server = http.createServer(async (req, res) => {
 
       // Get calendar events for this year from all calendars
       const now = new Date();
-      const yearStart = new Date('2024-06-01');
+      const yearStart = new Date('2025-01-01');
       const token = await getGoogleToken(CALENDAR_CREDS);
       const [r1,r2,r3] = await Promise.all([
         fetchCalendarEvents(token, CALENDAR_ID, yearStart, now),
@@ -277,6 +277,10 @@ const server = http.createServer(async (req, res) => {
       console.log('Liavy events after filter:', allEvents.length);
       // Log first few client names
       console.log('Sample clients:', allEvents.slice(0,10).map(e=>e.client));
+      const karinEvents = allEvents.filter(e=>e.client&&e.client.includes('קארין'));
+      console.log('Karin events:', karinEvents.length, karinEvents.slice(0,3).map(e=>e.client+'|'+e.summary));
+      const niranEvents = allEvents.filter(e=>e.client&&e.client.includes('נירן'));
+      console.log('Niran events:', niranEvents.length, niranEvents.slice(0,3).map(e=>e.client+'|'+e.summary));
 
       // Count sessions per client name from calendar
       const sessionCount = {};
