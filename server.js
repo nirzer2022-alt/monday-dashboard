@@ -269,9 +269,14 @@ const server = http.createServer(async (req, res) => {
         fetchCalendarEvents(token, CALENDAR_ID_STEPUP, yearStart, now),
         fetchCalendarEvents(token, CALENDAR_ID_CONSULT, yearStart, now),
       ]);
-      const allEvents = [
+      const rawEvents = [
         ...(r1.items||[]), ...(r2.items||[]), ...(r3.items||[])
-      ].filter(e=>e.status!=='cancelled').map(classifyEvent).filter(e=>e&&e.type==='ליווי');
+      ].filter(e=>e.status!=='cancelled');
+      console.log('Raw events total:', rawEvents.length);
+      const allEvents = rawEvents.map(classifyEvent).filter(e=>e&&e.type==='ליווי');
+      console.log('Liavy events after filter:', allEvents.length);
+      // Log first few client names
+      console.log('Sample clients:', allEvents.slice(0,10).map(e=>e.client));
 
       // Count sessions per client name from calendar
       const sessionCount = {};
