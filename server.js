@@ -292,30 +292,27 @@ const server = http.createServer(async (req, res) => {
         if(!sessionLast[name] || e.start > sessionLast[name]) sessionLast[name] = e.start;
       });
 
-      // Build purchased map from Monday (by first name match)
-      const purchasedMap = {};
-      active.forEach(i => {
+      // Build clients from Monday active list only, match calendar data
+      const clients = active.map(i => {
         const purchased = parseInt(i.column_values?.find(c=>c.id==='numeric_mky8ze04')?.text||'0')||0;
-        purchasedMap[i.name] = purchased;
-      });
-
-      // Build clients from calendar data directly
-      const clients = Object.entries(sessionCount)
-        .sort((a,b) => b[1]-a[1])
-        .map(([calName, done]) => {
-          // Try to find purchased count from Monday
-          let purchased = 0;
-          Object.entries(purchasedMap).forEach(([mondayName, p]) => {
-            if(mondayName.includes(calName) || calName.includes(mondayName) ||
-               mondayName.split(' ')[0]===calName.split(' ')[0]) {
-              purchased = Math.max(purchased, p);
-            }
-          });
-          const remaining = purchased > 0 ? purchased - done : null;
-          const alert = remaining !== null && remaining <= 2;
-          const last = sessionLast[calName] ? new Date(sessionLast[calName]).toLocaleDateString('he-IL') : '';
-          return { name: calName, purchased, done, remaining, alert, last };
+        const mondayName = i.name;
+        const mondayFirst = mondayName.split(' ')[0];
+        // Find matching calendar sessions
+        let done = 0;
+        let last = '';
+        Object.entries(sessionCount).forEach(([calName, count]) => {
+          const calFirst = calName.split(' ')[0];
+          if(mondayName.includes(calName) || calName.includes(mondayName) || mondayFirst===calFirst) {
+            done += count;
+            const l = sessionLast[calName] || '';
+            if(l && (!last || l > last)) last = l;
+          }
         });
+        const remaining = purchased > 0 ? purchased - done : null;
+        const alert = remaining !== null && remaining <= 2;
+        const lastStr = last ? new Date(last).toLocaleDateString('he-IL') : '';
+        return { name: mondayName, purchased, done, remaining, alert, last: lastStr };
+      });
 
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ ok: true, clients, debug: sessionCount }));
