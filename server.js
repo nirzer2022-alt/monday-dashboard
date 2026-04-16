@@ -273,28 +273,40 @@ const server = http.createServer(async (req, res) => {
         ...(r1.items||[]), ...(r2.items||[]), ...(r3.items||[])
       ].filter(e=>e.status!=='cancelled').map(classifyEvent).filter(e=>e&&e.type==='ליווי');
 
-      // Count sessions per client name
+      // Count sessions per client name from calendar
       const sessionCount = {};
+      const sessionLast = {};
       allEvents.forEach(e => {
         const name = e.client;
+        if(!name) return;
         sessionCount[name] = (sessionCount[name]||0) + 1;
+        if(!sessionLast[name] || e.start > sessionLast[name]) sessionLast[name] = e.start;
       });
 
-      // Build response
-      const clients = active.map(i => {
+      // Build purchased map from Monday (by first name match)
+      const purchasedMap = {};
+      active.forEach(i => {
         const purchased = parseInt(i.column_values?.find(c=>c.id==='numeric_mky8ze04')?.text||'0')||0;
-        // Try to match by name
-        let done = 0;
-        Object.entries(sessionCount).forEach(([calName, count]) => {
-          if(i.name.includes(calName) || calName.includes(i.name) ||
-             i.name.split(' ')[0]===calName.split(' ')[0]) {
-            done = Math.max(done, count);
-          }
-        });
-        const remaining = purchased > 0 ? purchased - done : null;
-        const alert = remaining !== null && remaining <= 2;
-        return { name: i.name, purchased, done, remaining, alert };
+        purchasedMap[i.name] = purchased;
       });
+
+      // Build clients from calendar data directly
+      const clients = Object.entries(sessionCount)
+        .sort((a,b) => b[1]-a[1])
+        .map(([calName, done]) => {
+          // Try to find purchased count from Monday
+          let purchased = 0;
+          Object.entries(purchasedMap).forEach(([mondayName, p]) => {
+            if(mondayName.includes(calName) || calName.includes(mondayName) ||
+               mondayName.split(' ')[0]===calName.split(' ')[0]) {
+              purchased = Math.max(purchased, p);
+            }
+          });
+          const remaining = purchased > 0 ? purchased - done : null;
+          const alert = remaining !== null && remaining <= 2;
+          const last = sessionLast[calName] ? new Date(sessionLast[calName]).toLocaleDateString('he-IL') : '';
+          return { name: calName, purchased, done, remaining, alert, last };
+        });
 
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ ok: true, clients, debug: sessionCount }));
