@@ -302,7 +302,10 @@ const server = http.createServer(async (req, res) => {
         let last = '';
         Object.entries(sessionCount).forEach(([calName, count]) => {
           const calFirst = calName.split(' ')[0];
-          if(mondayName.includes(calName) || calName.includes(mondayName) || mondayFirst===calFirst) {
+          const exactMatch = mondayName===calName || mondayName.includes(calName) || calName.includes(mondayName);
+          // Only match first name if it's more than 2 chars (avoid single letter matches)
+          const firstMatch = mondayFirst.length > 2 && calFirst.length > 2 && mondayFirst===calFirst;
+          if(exactMatch || firstMatch) {
             done += count;
             const l = sessionLast[calName] || '';
             if(l && (!last || l > last)) last = l;
