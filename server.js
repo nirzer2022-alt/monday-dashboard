@@ -279,10 +279,13 @@ const server = http.createServer(async (req, res) => {
         fetchCalendarEvents(token, CALENDAR_ID_STEPUP, yearStart, now),
         fetchCalendarEvents(token, CALENDAR_ID_CONSULT, yearStart, now),
       ]);
+      console.log('r1 items:', r1.items?.length, 'r2 items:', r2.items?.length, 'r3 items:', r3.items?.length);
       const rawEvents = [
         ...(r1.items||[]), ...(r2.items||[]), ...(r3.items||[])
       ].filter(e=>e.status!=='cancelled');
       console.log('Raw events total:', rawEvents.length);
+      // Log sample summaries to see format
+      console.log('Sample summaries:', rawEvents.slice(0,5).map(e=>e.summary));
       const allEvents = rawEvents.map(classifyEvent).filter(e=>e&&e.type==='ליווי');
       console.log('Liavy events after filter:', allEvents.length);
       // Log first few client names
