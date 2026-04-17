@@ -272,13 +272,17 @@ const server = http.createServer(async (req, res) => {
 
       // Get calendar events for this year from all calendars
       const now = new Date();
-      const yearStart = new Date('2024-06-01');
+      // Fetch in two chunks to avoid 2500 API limit - prioritize recent data
+      const yearStart2025 = new Date('2025-01-01');
+      const yearStart2026 = new Date('2026-01-01');
       const token = await getGoogleToken(CALENDAR_CREDS);
-      const [r1,r2,r3] = await Promise.all([
-        fetchCalendarEvents(token, CALENDAR_ID, yearStart, now),
-        fetchCalendarEvents(token, CALENDAR_ID_STEPUP, yearStart, now),
-        fetchCalendarEvents(token, CALENDAR_ID_CONSULT, yearStart, now),
+      const [r1a,r1b,r2,r3] = await Promise.all([
+        fetchCalendarEvents(token, CALENDAR_ID, yearStart2026, now),      // 2026 data
+        fetchCalendarEvents(token, CALENDAR_ID, yearStart2025, yearStart2026), // 2025 data
+        fetchCalendarEvents(token, CALENDAR_ID_STEPUP, yearStart2025, now),
+        fetchCalendarEvents(token, CALENDAR_ID_CONSULT, yearStart2025, now),
       ]);
+      const r1 = { items: [...(r1a.items||[]), ...(r1b.items||[])] };
       console.log('r1 items:', r1.items?.length, 'r2 items:', r2.items?.length, 'r3 items:', r3.items?.length);
       const rawEvents = [
         ...(r1.items||[]), ...(r2.items||[]), ...(r3.items||[])
