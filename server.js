@@ -282,7 +282,14 @@ const server = http.createServer(async (req, res) => {
         fetchCalendarEvents(token, CALENDAR_ID_STEPUP, yearStart2025, now),
         fetchCalendarEvents(token, CALENDAR_ID_CONSULT, yearStart2025, now),
       ]);
-      const r1 = { items: [...(r1a.items||[]), ...(r1b.items||[])] };
+      // Deduplicate by event id
+      const seen = new Set();
+      const r1Items = [...(r1a.items||[]), ...(r1b.items||[])].filter(e => {
+        if(seen.has(e.id)) return false;
+        seen.add(e.id);
+        return true;
+      });
+      const r1 = { items: r1Items };
       console.log('r1 items:', r1.items?.length, 'r2 items:', r2.items?.length, 'r3 items:', r3.items?.length);
       const rawEvents = [
         ...(r1.items||[]), ...(r2.items||[]), ...(r3.items||[])
