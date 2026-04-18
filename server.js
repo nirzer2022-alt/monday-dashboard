@@ -319,11 +319,14 @@ const server = http.createServer(async (req, res) => {
           const calFirst = calName.split(' ')[0];
           // Match if: exact same name, OR monday name contains cal name, OR cal name equals monday first name
           const match = 
-            mondayName === calName ||                          // exact: "קארין" === "קארין"
-            mondayName.includes(calName) ||                   // "נירן חברון".includes("נירן") 
-            calName === mondayFirst ||                         // "נירן" === "נירן" (first name of "נירן חברון")
-            (calFirst.length >= 3 && calFirst === mondayFirst); // first names match (both 3+ chars)
+            mondayName === calName ||
+            mondayName.includes(calName) ||
+            calName === mondayFirst ||
+            (calFirst.length >= 3 && calFirst === mondayFirst);
           if(match) {
+            if(mondayFirst === 'נירן' || mondayFirst === 'דניאל') {
+              console.log('Match found:', mondayName, '<=>', calName, 'count:', count);
+            }
             done += count;
             const l = sessionLast[calName] || '';
             if(l && (!last || l > last)) last = l;
