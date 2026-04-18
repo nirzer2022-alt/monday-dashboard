@@ -318,15 +318,11 @@ const server = http.createServer(async (req, res) => {
         Object.entries(sessionCount).forEach(([calName, count]) => {
           const calFirst = calName.split(' ')[0];
           // Match if: exact same name, OR monday name contains cal name, OR cal name equals monday first name
+          // Strict matching only - avoid partial string matches
           const match = 
-            mondayName === calName ||
-            mondayName.includes(calName) ||
-            calName === mondayFirst ||
-            (calFirst.length >= 3 && calFirst === mondayFirst);
+            mondayName === calName ||           // exact full name match
+            calName === mondayFirst;            // cal name equals first name only
           if(match) {
-            if(mondayFirst === 'נירן' || mondayFirst === 'דניאל') {
-              console.log('Match found:', mondayName, '<=>', calName, 'count:', count);
-            }
             done += count;
             const l = sessionLast[calName] || '';
             if(l && (!last || l > last)) last = l;
