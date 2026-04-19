@@ -266,7 +266,7 @@ const server = http.createServer(async (req, res) => {
 
       // שלב 2 — אירועים מהיומן — 30 יום אחורה + 30 קדימה בלבד
       const now = new Date();
-      const timeMin = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const timeMin = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000); // שנה אחורה
       const timeMax = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
       const token = await getGoogleToken(CALENDAR_CREDS);
