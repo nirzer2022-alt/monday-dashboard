@@ -244,32 +244,80 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (req.url === '/coaching') {
+ if (req.url === '/coaching') {
     try {
-      // Get active coaching clients from Monday
+      // שלב 1 — שמות מהמאנדיי (קבוצת ליווי פעיל בלבד)
       const coachingQuery = `{
         boards(ids: 9949694755) {
-          groups {
-            id title
+          groups(ids: ["new_group29179"]) {
             items_page(limit: 100) {
               items {
                 id name
-                column_values(ids: ["status","numeric_mky8ze04"]) { id text }
+                column_values(ids: ["numeric_mky8ze04"]) { id text }
               }
             }
           }
         }
       }`;
       const mondayRes = await fetchMonday(coachingQuery);
-      const groups = mondayRes.data?.boards?.[0]?.groups || [];
-      const allClients = groups.flatMap(g => g.items_page?.items || []);
-      // Filter by group - active coaching group
-      const activeGroup = groups.find(g => g.id === 'new_group29179' || g.title === 'ליווי פעיל');
-      const active = activeGroup ? (activeGroup.items_page?.items || []) : allClients.filter(i => {
-        const status = i.column_values?.find(c=>c.id==='status')?.text||'';
-        return status === 'פעיל';
+      const active = mondayRes.data?.boards?.[0]?.groups?.[0]?.items_page?.items || [];
+
+      // סך ליוויים פעילים — פשוט מאוד
+      const totalActive = active.length;
+
+      // שלב 2 — אירועים מהיומן — טווח מוגדר בלבד
+      const now = new Date();
+      const timeMin = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 יום אחורה
+      const timeMax = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 יום קדימה
+
+      const token = await getGoogleToken(CALENDAR_CREDS);
+      const [r1, r2, r3] = await Promise.all([
+        fetchCalendarEvents(token, CALENDAR_ID, timeMin, timeMax),
+        fetchCalendarEvents(token, CALENDAR_ID_STEPUP, timeMin, timeMax),
+        fetchCalendarEvents(token, CALENDAR_ID_CONSULT, timeMin, timeMax),
+      ]);
+
+      const VALID_DURATIONS = [30, 60, 120];
+
+      const allEvents = [
+        ...(r1.items || []),
+        ...(r2.items || []),
+        ...(r3.items || []),
+      ].filter(e => e.status !== 'cancelled' && e.start?.dateTime);
+
+      // שלב 3 — בנה רשימת לקוחות מהמאנדיי, חפש ביומן לפי שם פרטי + משך
+      const clients = active.map(item => {
+        const fullName = item.name;                    // "נירן חברון" — לתצוגה
+        const searchName = item.name.split(' ')[0];    // "נירן" — לחיפוש
+        const purchased = parseInt(item.column_values?.find(c => c.id === 'numeric_mky8ze04')?.text || '0') || 0;
+
+        // סינון כפול: שם + משך
+        const matched = allEvents.filter(e => {
+          const title = e.summary || '';
+          const start = new Date(e.start.dateTime);
+          const end = new Date(e.end.dateTime);
+          const duration = (end - start) / 60000;
+          return title.includes(searchName) && VALID_DURATIONS.includes(duration);
+        });
+
+        const done = matched.length;
+        const lastEvent = matched.sort((a, b) => new Date(b.start.dateTime) - new Date(a.start.dateTime))[0];
+        const last = lastEvent ? new Date(lastEvent.start.dateTime).toLocaleDateString('he-IL') : '';
+        const remaining = purchased > 0 ? purchased - done : null;
+        const alert = remaining !== null && remaining <= 2;
+
+        return { name: fullName, purchased, done, remaining, alert, last };
       });
 
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: true, totalActive, clients }));
+
+    } catch(e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: e.message }));
+    }
+    return;
+  }
       // Get calendar events for this year from all calendars
       const now = new Date();
       // Fetch last 18 months to stay within 2500 API limit
