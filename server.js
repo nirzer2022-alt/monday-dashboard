@@ -118,7 +118,7 @@ async function fetchCalendarEvents(token, calendarId, timeMin, timeMax) {
     timeMax: timeMax.toISOString(),
     singleEvents: 'true',
     orderBy: 'startTime',
-    maxResults: '2500',
+    maxResults: '500',
   });
   const encodedId = encodeURIComponent(calendarId);
   return new Promise((resolve, reject) => {
@@ -173,7 +173,6 @@ function classifyEvent(event) {
   } else if(longDashIdx > 0) {
     namePart = summary.slice(0, longDashIdx).trim();
   } else {
-    // Try plain dash
     const plainDash = summary.indexOf('-');
     namePart = plainDash > 0 ? summary.slice(0, plainDash).trim() : summary.trim();
   }
@@ -244,7 +243,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
- if (req.url === '/coaching') {
+  if (req.url === '/coaching') {
     try {
       // שלב 1 — שמות מהמאנדיי (קבוצת ליווי פעיל בלבד)
       const coachingQuery = `{
@@ -262,13 +261,13 @@ const server = http.createServer(async (req, res) => {
       const mondayRes = await fetchMonday(coachingQuery);
       const active = mondayRes.data?.boards?.[0]?.groups?.[0]?.items_page?.items || [];
 
-      // סך ליוויים פעילים — פשוט מאוד
+      // סך ליוויים פעילים
       const totalActive = active.length;
 
-      // שלב 2 — אירועים מהיומן — טווח מוגדר בלבד
+      // שלב 2 — אירועים מהיומן — 30 יום אחורה + 30 קדימה בלבד
       const now = new Date();
-      const timeMin = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 יום אחורה
-      const timeMax = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 יום קדימה
+      const timeMin = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const timeMax = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
       const token = await getGoogleToken(CALENDAR_CREDS);
       const [r1, r2, r3] = await Promise.all([
@@ -285,13 +284,12 @@ const server = http.createServer(async (req, res) => {
         ...(r3.items || []),
       ].filter(e => e.status !== 'cancelled' && e.start?.dateTime);
 
-      // שלב 3 — בנה רשימת לקוחות מהמאנדיי, חפש ביומן לפי שם פרטי + משך
+      // שלב 3 — התאמה: שם מהמאנדיי + משך תקין
       const clients = active.map(item => {
-        const fullName = item.name;                    // "נירן חברון" — לתצוגה
-        const searchName = item.name.split(' ')[0];    // "נירן" — לחיפוש
+        const fullName = item.name;                     // "נירן חברון" — לתצוגה
+        const searchName = item.name.split(' ')[0];     // "נירן" — לחיפוש ביומן
         const purchased = parseInt(item.column_values?.find(c => c.id === 'numeric_mky8ze04')?.text || '0') || 0;
 
-        // סינון כפול: שם + משך
         const matched = allEvents.filter(e => {
           const title = e.summary || '';
           const start = new Date(e.start.dateTime);
@@ -312,78 +310,6 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ ok: true, totalActive, clients }));
 
-    } catch(e) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: false, error: e.message }));
-    }
-    return;
-  }
-      // Get calendar events for this year from all calendars
-      const now = new Date();
-      // Fetch last 18 months to stay within 2500 API limit
-      const eightMonthsAgo = new Date(now);
-      eightMonthsAgo.setMonth(eightMonthsAgo.getMonth() - 18);
-      const token = await getGoogleToken(CALENDAR_CREDS);
-      const [r1,r2,r3] = await Promise.all([
-        fetchCalendarEvents(token, CALENDAR_ID, eightMonthsAgo, now),
-        fetchCalendarEvents(token, CALENDAR_ID_STEPUP, eightMonthsAgo, now),
-        fetchCalendarEvents(token, CALENDAR_ID_CONSULT, eightMonthsAgo, now),
-      ]);
-      console.log('r1 items:', r1.items?.length, 'r2 items:', r2.items?.length, 'r3 items:', r3.items?.length);
-      const rawEvents = [
-        ...(r1.items||[]), ...(r2.items||[]), ...(r3.items||[])
-      ].filter(e=>e.status!=='cancelled');
-      console.log('Raw events total:', rawEvents.length);
-      // Log sample summaries to see format
-      console.log('Sample summaries:', rawEvents.slice(0,5).map(e=>e.summary));
-      const allEvents = rawEvents.map(classifyEvent).filter(e=>e&&e.type==='ליווי');
-      console.log('Liavy events after filter:', allEvents.length);
-      // Log first few client names
-      console.log('Sample clients:', allEvents.slice(0,10).map(e=>e.client));
-      const karinEvents = allEvents.filter(e=>e.client&&e.client.includes('קארין'));
-      console.log('Karin events:', karinEvents.length, karinEvents.slice(0,3).map(e=>e.client+'|'+e.summary));
-      const niranEvents = allEvents.filter(e=>e.client&&e.client.includes('נירן'));
-      console.log('Niran events:', niranEvents.length, niranEvents.slice(0,3).map(e=>e.client+'|'+e.summary));
-
-      // Count sessions per client name from calendar
-      const sessionCount = {};
-      const sessionLast = {};
-      allEvents.forEach(e => {
-        const name = e.client;
-        if(!name) return;
-        sessionCount[name] = (sessionCount[name]||0) + 1;
-        if(!sessionLast[name] || e.start > sessionLast[name]) sessionLast[name] = e.start;
-      });
-
-      // Build clients from Monday active list only, match calendar data
-      const clients = active.map(i => {
-        const purchased = parseInt(i.column_values?.find(c=>c.id==='numeric_mky8ze04')?.text||'0')||0;
-        const mondayName = i.name;
-        const mondayFirst = mondayName.split(' ')[0];
-        // Find matching calendar sessions
-        let done = 0;
-        let last = '';
-        Object.entries(sessionCount).forEach(([calName, count]) => {
-          const calFirst = calName.split(' ')[0];
-          // Match if: exact same name, OR monday name contains cal name, OR cal name equals monday first name
-          // Strict matching only - avoid partial string matches
-          const match = 
-            mondayName === calName ||           // exact full name match
-            calName === mondayFirst;            // cal name equals first name only
-          if(match) {
-            done += count;
-            const l = sessionLast[calName] || '';
-            if(l && (!last || l > last)) last = l;
-          }
-        });
-        const remaining = purchased > 0 ? purchased - done : null;
-        const alert = remaining !== null && remaining <= 2;
-        const lastStr = last ? new Date(last).toLocaleDateString('he-IL') : '';
-        return { name: mondayName, purchased, done, remaining, alert, last: lastStr };
-      });
-
-      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ ok: true, clients, debug: sessionCount }));
     } catch(e) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ ok: false, error: e.message }));
