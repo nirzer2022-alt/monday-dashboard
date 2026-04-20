@@ -280,12 +280,11 @@ const server = http.createServer(async (req, res) => {
       ].filter(e => e.status !== 'cancelled' && e.start?.dateTime);
 
       // לוג לאבחון — פורמט כותרות ביומן
-      console.log('=== דוגמת אירועים מהיומן ===');
-      console.log(allEvents.slice(0, 30).map(e => {
-        const dur = (new Date(e.end.dateTime) - new Date(e.start.dateTime)) / 60000;
-        return `${dur} דק | ${e.summary}`;
-      }));
-
+     const niranEvents = allEvents.filter(e => e.summary?.includes('נירן'));
+console.log('נירן raw:', niranEvents.map(e => {
+  const chars = [...e.summary].map(c => c.charCodeAt(0));
+  return e.summary + ' | codes: ' + chars.join(',');
+}));
       // שלב 3 — התאמה: שם בתחילת הכותרת + משך תקין
       const clients = active.map(item => {
         const fullName = item.name;
