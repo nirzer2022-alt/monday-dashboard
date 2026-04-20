@@ -111,8 +111,7 @@ async function getGoogleToken(creds) {
   });
 }
 
-// פונקציה כללית — maxResults ניתן להגדרה
-async function fetchCalendarEvents(token, calendarId, timeMin, timeMax, maxResults = '500') {
+async function fetchCalendarEvents(token, calendarId, timeMin, timeMax, maxResults = '2500') {
   const params = new URLSearchParams({
     timeMin: timeMin.toISOString(),
     timeMax: timeMax.toISOString(),
@@ -189,9 +188,9 @@ async function getCalendarData(timeMin, timeMax) {
   if (!CALENDAR_CREDS) throw new Error('GOOGLE_CREDENTIALS not set');
   const token = await getGoogleToken(CALENDAR_CREDS);
   const [r1, r2, r3] = await Promise.all([
-    fetchCalendarEvents(token, CALENDAR_ID, timeMin, timeMax, '500'),
-    fetchCalendarEvents(token, CALENDAR_ID_STEPUP, timeMin, timeMax, '500'),
-    fetchCalendarEvents(token, CALENDAR_ID_CONSULT, timeMin, timeMax, '500'),
+    fetchCalendarEvents(token, CALENDAR_ID, timeMin, timeMax),
+    fetchCalendarEvents(token, CALENDAR_ID_STEPUP, timeMin, timeMax),
+    fetchCalendarEvents(token, CALENDAR_ID_CONSULT, timeMin, timeMax),
   ]);
   const events = [
     ...(r1.items || []).filter(e => e.status !== 'cancelled'),
@@ -224,7 +223,7 @@ const server = http.createServer(async (req, res) => {
       const url = new URL(req.url, 'http://localhost');
       const from = url.searchParams.get('from');
       const to = url.searchParams.get('to');
-      const timeMin = new Date('2025-01-01');
+      const timeMin = from ? new Date(from) : new Date(new Date().getFullYear(), 0, 1);
       const timeMax = to ? new Date(to) : new Date();
       timeMax.setHours(23, 59, 59);
 
@@ -240,7 +239,7 @@ const server = http.createServer(async (req, res) => {
 
   if (req.url === '/coaching') {
     try {
-      // שלב 1 — שמות מהמאנדיי (קבוצת ליווי פעיל בלבד)
+      // שלב 1 — שמות מהמאנדיי + סך ליוויים פעילים
       const coachingQuery = `{
         boards(ids: 9949694755) {
           groups(ids: ["new_group29179"]) {
@@ -257,17 +256,16 @@ const server = http.createServer(async (req, res) => {
       const active = mondayRes.data?.boards?.[0]?.groups?.[0]?.items_page?.items || [];
       const totalActive = active.length;
 
-      // שלב 2 — אירועים מהיומן — שנה אחורה + 30 יום קדימה
-      // maxResults: 2500 כדי לא לחתוך אירועים
+      // שלב 2 — אירועים מהיומן — שנה אחורה + 30 יום קדימה, 2500 תוצאות
       const now = new Date();
       const timeMin = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
       const timeMax = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
       const token = await getGoogleToken(CALENDAR_CREDS);
       const [r1, r2, r3] = await Promise.all([
-        fetchCalendarEvents(token, CALENDAR_ID, timeMin, timeMax, '2500'),
-        fetchCalendarEvents(token, CALENDAR_ID_STEPUP, timeMin, timeMax, '2500'),
-        fetchCalendarEvents(token, CALENDAR_ID_CONSULT, timeMin, timeMax, '2500'),
+        fetchCalendarEvents(token, CALENDAR_ID, timeMin, timeMax),
+        fetchCalendarEvents(token, CALENDAR_ID_STEPUP, timeMin, timeMax),
+        fetchCalendarEvents(token, CALENDAR_ID_CONSULT, timeMin, timeMax),
       ]);
 
       const VALID_DURATIONS = [30, 60, 120];
