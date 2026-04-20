@@ -224,7 +224,7 @@ const server = http.createServer(async (req, res) => {
       const url = new URL(req.url, 'http://localhost');
       const from = url.searchParams.get('from');
       const to = url.searchParams.get('to');
-      const timeMin = from ? new Date(from) : new Date(new Date().getFullYear(), 0, 1);
+      const timeMin = new Date('2025-01-01');
       const timeMax = to ? new Date(to) : new Date();
       timeMax.setHours(23, 59, 59);
 
