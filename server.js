@@ -5,7 +5,6 @@ const path = require('path');
 const MONDAY_TOKEN = process.env.MONDAY_TOKEN || '';
 const PORT = process.env.PORT || 3000;
 
-// Google Calendar Service Account credentials from environment variable
 const CALENDAR_CREDS = process.env.GOOGLE_CREDENTIALS ? JSON.parse(process.env.GOOGLE_CREDENTIALS) : null;
 const CALENDAR_ID = process.env.CALENDAR_ID || 'nirzer2022@gmail.com';
 const CALENDAR_ID_STEPUP = '3fafd7868d8f30ef280cf29ecbd74ef79f75ba465c6c0b488145246726bae0e7@group.calendar.google.com';
@@ -112,13 +111,14 @@ async function getGoogleToken(creds) {
   });
 }
 
-async function fetchCalendarEvents(token, calendarId, timeMin, timeMax) {
+// פונקציה כללית — maxResults ניתן להגדרה
+async function fetchCalendarEvents(token, calendarId, timeMin, timeMax, maxResults = '500') {
   const params = new URLSearchParams({
     timeMin: timeMin.toISOString(),
     timeMax: timeMax.toISOString(),
     singleEvents: 'true',
     orderBy: 'startTime',
-    maxResults: '2500',
+    maxResults,
   });
   const encodedId = encodeURIComponent(calendarId);
   return new Promise((resolve, reject) => {
@@ -189,16 +189,15 @@ async function getCalendarData(timeMin, timeMax) {
   if (!CALENDAR_CREDS) throw new Error('GOOGLE_CREDENTIALS not set');
   const token = await getGoogleToken(CALENDAR_CREDS);
   const [r1, r2, r3] = await Promise.all([
-    fetchCalendarEvents(token, CALENDAR_ID, timeMin, timeMax),
-    fetchCalendarEvents(token, CALENDAR_ID_STEPUP, timeMin, timeMax),
-    fetchCalendarEvents(token, CALENDAR_ID_CONSULT, timeMin, timeMax),
+    fetchCalendarEvents(token, CALENDAR_ID, timeMin, timeMax, '500'),
+    fetchCalendarEvents(token, CALENDAR_ID_STEPUP, timeMin, timeMax, '500'),
+    fetchCalendarEvents(token, CALENDAR_ID_CONSULT, timeMin, timeMax, '500'),
   ]);
   const events = [
     ...(r1.items || []).filter(e => e.status !== 'cancelled'),
     ...(r2.items || []).filter(e => e.status !== 'cancelled'),
     ...(r3.items || []).filter(e => e.status !== 'cancelled'),
   ];
-  console.log('סה"כ אירועים:', allRaw.length, 'r1:', r1.items?.length, 'r2:', r2.items?.length, 'r3:', r3.items?.length);
   return events.map(classifyEvent).filter(e => e !== null);
 }
 
@@ -256,46 +255,29 @@ const server = http.createServer(async (req, res) => {
       }`;
       const mondayRes = await fetchMonday(coachingQuery);
       const active = mondayRes.data?.boards?.[0]?.groups?.[0]?.items_page?.items || [];
-
-      // סך ליוויים פעילים
       const totalActive = active.length;
 
       // שלב 2 — אירועים מהיומן — שנה אחורה + 30 יום קדימה
+      // maxResults: 2500 כדי לא לחתוך אירועים
       const now = new Date();
       const timeMin = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
       const timeMax = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
       const token = await getGoogleToken(CALENDAR_CREDS);
       const [r1, r2, r3] = await Promise.all([
-        fetchCalendarEvents(token, CALENDAR_ID, timeMin, timeMax),
-        fetchCalendarEvents(token, CALENDAR_ID_STEPUP, timeMin, timeMax),
-        fetchCalendarEvents(token, CALENDAR_ID_CONSULT, timeMin, timeMax),
+        fetchCalendarEvents(token, CALENDAR_ID, timeMin, timeMax, '2500'),
+        fetchCalendarEvents(token, CALENDAR_ID_STEPUP, timeMin, timeMax, '2500'),
+        fetchCalendarEvents(token, CALENDAR_ID_CONSULT, timeMin, timeMax, '2500'),
       ]);
 
       const VALID_DURATIONS = [30, 60, 120];
-const allRaw = [
-  ...(r1.items || []),
-  ...(r2.items || []),
-  ...(r3.items || []),
-];
-const niranRaw = allRaw.filter(e => e.summary?.includes('נירן'));
-console.log('נירן לפני פילטר:', niranRaw.map(e => ({
-  summary: e.summary,
-  status: e.status,
-  hasDateTime: !!e.start?.dateTime,
-  start: e.start
-})));
+
       const allEvents = [
         ...(r1.items || []),
         ...(r2.items || []),
         ...(r3.items || []),
       ].filter(e => e.status !== 'cancelled' && e.start?.dateTime);
 
-      // לוג לאבחון — פורמט כותרות ביומן
-     const niranEvents = allEvents.filter(e => e.summary?.includes('נירן'));
-const karinEvents = allEvents.filter(e => e.summary?.includes('קארין'));
-console.log('נירן raw:', niranEvents.map(e => e.summary));
-console.log('קארין raw:', karinEvents.map(e => e.summary));
       // שלב 3 — התאמה: שם בתחילת הכותרת + משך תקין
       const clients = active.map(item => {
         const fullName = item.name;
@@ -315,8 +297,6 @@ console.log('קארין raw:', karinEvents.map(e => e.summary));
         });
 
         const done = matched.length;
-        console.log(`${searchName}: ${done} פגישות`, matched.map(e => e.summary));
-
         const lastEvent = matched.sort((a, b) => new Date(b.start.dateTime) - new Date(a.start.dateTime))[0];
         const last = lastEvent ? new Date(lastEvent.start.dateTime).toLocaleDateString('he-IL') : '';
         const remaining = purchased > 0 ? purchased - done : null;
