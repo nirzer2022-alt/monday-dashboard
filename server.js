@@ -272,7 +272,18 @@ const server = http.createServer(async (req, res) => {
       ]);
 
       const VALID_DURATIONS = [30, 60, 120];
-
+const allRaw = [
+  ...(r1.items || []),
+  ...(r2.items || []),
+  ...(r3.items || []),
+];
+const niranRaw = allRaw.filter(e => e.summary?.includes('נירן'));
+console.log('נירן לפני פילטר:', niranRaw.map(e => ({
+  summary: e.summary,
+  status: e.status,
+  hasDateTime: !!e.start?.dateTime,
+  start: e.start
+})));
       const allEvents = [
         ...(r1.items || []),
         ...(r2.items || []),
