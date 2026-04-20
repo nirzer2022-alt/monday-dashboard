@@ -299,6 +299,7 @@ const server = http.createServer(async (req, res) => {
         });
 
         const done = matched.length;
+        console.log(`${searchName}: ${matched.length} פגישות`, matched.map(e => e.summary));
         const lastEvent = matched.sort((a, b) => new Date(b.start.dateTime) - new Date(a.start.dateTime))[0];
         const last = lastEvent ? new Date(lastEvent.start.dateTime).toLocaleDateString('he-IL') : '';
         const remaining = purchased > 0 ? purchased - done : null;
