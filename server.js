@@ -296,6 +296,7 @@ const server = http.createServer(async (req, res) => {
           const end = new Date(e.end.dateTime);
           const duration = (end - start) / 60000;
          return (title.startsWith(searchName + ' -') || title.startsWith(searchName + ' —') || title.startsWith(searchName + '-')) && VALID_DURATIONS.includes(duration);
+});
 
         const done = matched.length;
         console.log(`${searchName}: ${matched.length} פגישות`, matched.map(e => e.summary));
