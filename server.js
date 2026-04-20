@@ -118,7 +118,7 @@ async function fetchCalendarEvents(token, calendarId, timeMin, timeMax) {
     timeMax: timeMax.toISOString(),
     singleEvents: 'true',
     orderBy: 'startTime',
-    maxResults: '500',
+    maxResults: '2500',
   });
   const encodedId = encodeURIComponent(calendarId);
   return new Promise((resolve, reject) => {
