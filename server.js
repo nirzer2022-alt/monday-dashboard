@@ -281,10 +281,9 @@ const server = http.createServer(async (req, res) => {
 
       // לוג לאבחון — פורמט כותרות ביומן
      const niranEvents = allEvents.filter(e => e.summary?.includes('נירן'));
-console.log('נירן raw:', niranEvents.map(e => {
-  const chars = [...e.summary].map(c => c.charCodeAt(0));
-  return e.summary + ' | codes: ' + chars.join(',');
-}));
+const karinEvents = allEvents.filter(e => e.summary?.includes('קארין'));
+console.log('נירן raw:', niranEvents.map(e => e.summary));
+console.log('קארין raw:', karinEvents.map(e => e.summary));
       // שלב 3 — התאמה: שם בתחילת הכותרת + משך תקין
       const clients = active.map(item => {
         const fullName = item.name;
