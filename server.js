@@ -198,6 +198,7 @@ async function getCalendarData(timeMin, timeMax) {
     ...(r2.items || []).filter(e => e.status !== 'cancelled'),
     ...(r3.items || []).filter(e => e.status !== 'cancelled'),
   ];
+  console.log('סה"כ אירועים:', allRaw.length, 'r1:', r1.items?.length, 'r2:', r2.items?.length, 'r3:', r3.items?.length);
   return events.map(classifyEvent).filter(e => e !== null);
 }
 
