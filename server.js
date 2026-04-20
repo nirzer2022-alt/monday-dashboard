@@ -111,13 +111,14 @@ async function getGoogleToken(creds) {
   });
 }
 
-async function fetchCalendarEvents(token, calendarId, timeMin, timeMax, maxResults = '2500') {
+// קריאה בודדת — חלון אחד
+async function fetchCalendarEvents(token, calendarId, timeMin, timeMax) {
   const params = new URLSearchParams({
     timeMin: timeMin.toISOString(),
     timeMax: timeMax.toISOString(),
     singleEvents: 'true',
     orderBy: 'startTime',
-    maxResults,
+    maxResults: '2500',
   });
   const encodedId = encodeURIComponent(calendarId);
   return new Promise((resolve, reject) => {
@@ -138,6 +139,24 @@ async function fetchCalendarEvents(token, calendarId, timeMin, timeMax, maxResul
     req.on('error', reject);
     req.end();
   });
+}
+
+// קריאות מרובות — חלונות של 3 חודשים, ללא מגבלת 2500
+async function fetchAllCalendarEvents(token, calendarId, timeMin, timeMax) {
+  const allItems = [];
+  let current = new Date(timeMin);
+
+  while (current < timeMax) {
+    const chunkEnd = new Date(Math.min(
+      current.getTime() + 90 * 24 * 60 * 60 * 1000,
+      timeMax.getTime()
+    ));
+    const result = await fetchCalendarEvents(token, calendarId, current, chunkEnd);
+    allItems.push(...(result.items || []));
+    current = new Date(chunkEnd);
+  }
+
+  return { items: allItems };
 }
 
 function classifyEvent(event) {
@@ -184,13 +203,14 @@ function classifyEvent(event) {
   };
 }
 
+// /calendar משתמש בקריאות מרובות — ללא מגבלת 2500
 async function getCalendarData(timeMin, timeMax) {
   if (!CALENDAR_CREDS) throw new Error('GOOGLE_CREDENTIALS not set');
   const token = await getGoogleToken(CALENDAR_CREDS);
   const [r1, r2, r3] = await Promise.all([
-    fetchCalendarEvents(token, CALENDAR_ID, timeMin, timeMax),
-    fetchCalendarEvents(token, CALENDAR_ID_STEPUP, timeMin, timeMax),
-    fetchCalendarEvents(token, CALENDAR_ID_CONSULT, timeMin, timeMax),
+    fetchAllCalendarEvents(token, CALENDAR_ID, timeMin, timeMax),
+    fetchAllCalendarEvents(token, CALENDAR_ID_STEPUP, timeMin, timeMax),
+    fetchAllCalendarEvents(token, CALENDAR_ID_CONSULT, timeMin, timeMax),
   ]);
   const events = [
     ...(r1.items || []).filter(e => e.status !== 'cancelled'),
@@ -256,19 +276,20 @@ const server = http.createServer(async (req, res) => {
       const active = mondayRes.data?.boards?.[0]?.groups?.[0]?.items_page?.items || [];
       const totalActive = active.length;
 
-      // שלב 2 — אירועים מהיומן — שנה אחורה + 30 יום קדימה, 2500 תוצאות
+      // שלב 2 — אירועים מהיומן בקריאות מרובות — שנה אחורה + 30 יום קדימה
       const now = new Date();
       const timeMin = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
       const timeMax = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
       const token = await getGoogleToken(CALENDAR_CREDS);
       const [r1, r2, r3] = await Promise.all([
-        fetchCalendarEvents(token, CALENDAR_ID, timeMin, timeMax),
-        fetchCalendarEvents(token, CALENDAR_ID_STEPUP, timeMin, timeMax),
-        fetchCalendarEvents(token, CALENDAR_ID_CONSULT, timeMin, timeMax),
+        fetchAllCalendarEvents(token, CALENDAR_ID, timeMin, timeMax),
+        fetchAllCalendarEvents(token, CALENDAR_ID_STEPUP, timeMin, timeMax),
+        fetchAllCalendarEvents(token, CALENDAR_ID_CONSULT, timeMin, timeMax),
       ]);
 
-      const VALID_DURATIONS = [30, 60, 120];
+      // ליווי = 60 דקות בלבד
+      const VALID_DURATIONS = [60];
 
       const allEvents = [
         ...(r1.items || []),
@@ -276,7 +297,7 @@ const server = http.createServer(async (req, res) => {
         ...(r3.items || []),
       ].filter(e => e.status !== 'cancelled' && e.start?.dateTime);
 
-      // שלב 3 — התאמה: שם בתחילת הכותרת + משך תקין
+      // שלב 3 — התאמה: שם בתחילת הכותרת + 60 דקות בלבד
       const clients = active.map(item => {
         const fullName = item.name;
         const searchName = item.name.split(' ')[0];
