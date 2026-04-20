@@ -148,23 +148,18 @@ function classifyEvent(event) {
   const summary = event.summary || '';
   const summaryLower = summary.toLowerCase();
 
-  // Skip all-day events
   if (!event.start?.dateTime) return null;
-  // Filter: exact durations only
   const knownDuration = duration===20 || duration===30 || duration===60 || duration===120;
   if (!knownDuration) return null;
 
-  // Classify by exact duration
   let type = 'אחר';
   if (duration===120) type = 'step-up';
   else if (duration===60) type = 'ליווי';
   else if (duration===30) type = 'שירות';
   else if (duration===20) type = 'ייעוץ';
 
-  // Zoom detection
   const isZoom = summaryLower.includes('זום') || summaryLower.includes('zoom');
 
-  // Extract client name - split on dash (with or without spaces)
   const dashIdx = summary.indexOf(' - ');
   const longDashIdx = summary.indexOf(' — ');
   let namePart;
@@ -264,9 +259,9 @@ const server = http.createServer(async (req, res) => {
       // סך ליוויים פעילים
       const totalActive = active.length;
 
-      // שלב 2 — אירועים מהיומן — 30 יום אחורה + 30 קדימה בלבד
+      // שלב 2 — אירועים מהיומן — שנה אחורה + 30 יום קדימה
       const now = new Date();
-      const timeMin = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000); // שנה אחורה
+      const timeMin = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
       const timeMax = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
       const token = await getGoogleToken(CALENDAR_CREDS);
@@ -284,10 +279,17 @@ const server = http.createServer(async (req, res) => {
         ...(r3.items || []),
       ].filter(e => e.status !== 'cancelled' && e.start?.dateTime);
 
-      // שלב 3 — התאמה: שם מהמאנדיי + משך תקין
+      // לוג לאבחון — פורמט כותרות ביומן
+      console.log('=== דוגמת אירועים מהיומן ===');
+      console.log(allEvents.slice(0, 30).map(e => {
+        const dur = (new Date(e.end.dateTime) - new Date(e.start.dateTime)) / 60000;
+        return `${dur} דק | ${e.summary}`;
+      }));
+
+      // שלב 3 — התאמה: שם בתחילת הכותרת + משך תקין
       const clients = active.map(item => {
-        const fullName = item.name;                     // "נירן חברון" — לתצוגה
-        const searchName = item.name.split(' ')[0];     // "נירן" — לחיפוש ביומן
+        const fullName = item.name;
+        const searchName = item.name.split(' ')[0];
         const purchased = parseInt(item.column_values?.find(c => c.id === 'numeric_mky8ze04')?.text || '0') || 0;
 
         const matched = allEvents.filter(e => {
@@ -295,11 +297,16 @@ const server = http.createServer(async (req, res) => {
           const start = new Date(e.start.dateTime);
           const end = new Date(e.end.dateTime);
           const duration = (end - start) / 60000;
-         return (title.startsWith(searchName + ' -') || title.startsWith(searchName + ' —') || title.startsWith(searchName + '-')) && VALID_DURATIONS.includes(duration);
-});
+          const nameMatch =
+            title.startsWith(searchName + ' -') ||
+            title.startsWith(searchName + ' —') ||
+            title.startsWith(searchName + '-');
+          return nameMatch && VALID_DURATIONS.includes(duration);
+        });
 
         const done = matched.length;
-        console.log(`${searchName}: ${matched.length} פגישות`, matched.map(e => e.summary));
+        console.log(`${searchName}: ${done} פגישות`, matched.map(e => e.summary));
+
         const lastEvent = matched.sort((a, b) => new Date(b.start.dateTime) - new Date(a.start.dateTime))[0];
         const last = lastEvent ? new Date(lastEvent.start.dateTime).toLocaleDateString('he-IL') : '';
         const remaining = purchased > 0 ? purchased - done : null;
