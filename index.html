@@ -529,7 +529,7 @@ function setCalRange(r){
   }
   else if(r==='year'){
     calFrom=toISO(new Date(now.getFullYear(),0,1));
-    var fut2=new Date(now);fut2.setMonth(fut2.getMonth()+3);calTo=toISO(fut2);
+    calTo=toISO(now);
   }
   var f=document.getElementById('calFrom');var t=document.getElementById('calTo');
   if(f)f.value=calFrom;if(t)t.value=calTo;
