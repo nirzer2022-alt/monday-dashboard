@@ -18,7 +18,7 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);min-h
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
 .updated{font-size:12px;color:var(--text3);}
 .btn{background:var(--bg2);border:1px solid var(--border);color:var(--text2);padding:6px 14px;border-radius:8px;font-size:13px;cursor:pointer;font-family:'Heebo',sans-serif;}
-.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
 .tab{padding:7px 16px;border-radius:8px;font-size:13px;cursor:pointer;border:1px solid var(--border);color:var(--text2);background:var(--bg2);font-family:'Heebo',sans-serif;font-weight:500;}
 .tab.active{background:var(--blue);color:#fff;border-color:var(--blue);}
 .tab.cal-tab.active{background:#0891b2;border-color:#0891b2;}
@@ -39,6 +39,7 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);min-h
 .funnel-num{font-size:16px;font-weight:700;}
 .funnel-pct{font-size:11px;opacity:.8;}
 .funnel-arr{font-size:9px;color:var(--text3);text-align:center;}
+.funnel-active{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:9px 13px;display:flex;justify-content:space-between;align-items:center;margin-top:2px;}
 table{width:100%;border-collapse:collapse;font-size:13px;}
 th{text-align:right;color:var(--text3);font-weight:500;padding:6px 4px;border-bottom:1px solid var(--border);font-size:11px;}
 td{padding:7px 4px;color:var(--text);border-bottom:1px solid var(--bg3);}
@@ -80,6 +81,8 @@ tr:last-child td{border-bottom:none;}
 .client-stat{text-align:center;}
 .client-stat-val{font-weight:700;font-size:16px;}
 .client-stat-lbl{font-size:10px;color:var(--text3);}
+.custom-range{display:flex;gap:8px;align-items:center;margin-right:8px;}
+.custom-range input[type=date]{border:1px solid var(--border);border-radius:8px;padding:5px 8px;font-size:12px;font-family:'Heebo',sans-serif;background:var(--bg2);color:var(--text);}
 </style>
 </head>
 <body>
@@ -100,7 +103,13 @@ tr:last-child td{border-bottom:none;}
     <button class="tab" onclick="go('week',this)">שבוע</button>
     <button class="tab" onclick="go('month',this)">חודש זה</button>
     <button class="tab" onclick="go('compare',this)">השוואת חודשים</button>
-    <button class="tab" onclick="go('custom',this)">📆 טווח מותאם</button>
+    <button class="tab" id="customTab" onclick="go('custom',this)">📆 טווח מותאם</button>
+    <div class="custom-range" id="customRangeInputs" style="display:none">
+      <input type="date" id="cfrom" onchange="applyCustomIfReady()">
+      <span style="color:var(--text3);font-size:12px">עד</span>
+      <input type="date" id="cto" onchange="applyCustomIfReady()">
+      <button class="btn" style="background:var(--blue);color:#fff;border-color:var(--blue);padding:5px 10px;font-size:12px" onclick="applyCustom()">הצג</button>
+    </div>
     <button class="tab" onclick="go('comm',this)">📞 תקשורת</button>
     <button class="tab cal-tab" onclick="go('calendar',this)">📅 יומן פגישות</button>
   </div>
@@ -128,6 +137,7 @@ const SRC=[
 const ADV=['נקבעה שיחה','רלוונטי-העבר למכירות','פולאו-אפ','פגישת StepUp','נמכר ליווי'];
 const MO=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 let range='today',data={},calEvents=[],calClientFilter='',calFrom='',calTo='',customFrom='',customTo='',calSortAsc=false,calDuration=0;
+let totalActiveCoaching=0;
 const fd=d=>d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();
 const toISO=d=>d.toISOString().split('T')[0];
 const gv=(item,col)=>item.column_values?.find(c=>c.id===col)?.text||'';
@@ -153,14 +163,11 @@ function label(r){
   if(r==='compare')return'השוואה בין חודשים · '+n.getFullYear();
   if(r==='comm')return'פעילות תקשורת Voicenter';
   if(r==='calendar')return'יומן פגישות';
-  if(r==='custom'){
-    if(customFrom&&customTo){
-      var f=new Date(customFrom),t=new Date(customTo);
-      return fd(f)+' — '+fd(t);
-    }
-    return 'טווח מותאם';
+  if(r==='custom'&&customFrom&&customTo){
+    var f=new Date(customFrom),t=new Date(customTo);
+    return fd(f)+' — '+fd(t);
   }
-  return '';
+  return 'טווח מותאם';
 }
 function setDR(r){
   const dr=document.getElementById('dr');
@@ -189,11 +196,13 @@ function reload(){
   else load();
 }
 function go(r,el){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('#mainTabs .tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
   range=r;
   setDR(r);
-  // Hide/show main tabs based on mode
+  // הצג/הסתר שדות טווח מותאם
+  var customInputs=document.getElementById('customRangeInputs');
+  if(customInputs)customInputs.style.display=(r==='custom')?'flex':'none';
   var mainTabs=document.getElementById('mainTabs');
   var calTabs=document.getElementById('calTabs');
   if(r==='calendar'){
@@ -203,30 +212,34 @@ function go(r,el){
   } else {
     if(mainTabs)mainTabs.style.display='flex';
     if(calTabs)calTabs.style.display='none';
+    if(r==='custom'&&(!customFrom||!customTo)){
+      document.getElementById('content').innerHTML='<div class="card" style="padding:20px"><div class="card-title">בחר טווח תאריכים ולחץ הצג</div></div>';
+      return;
+    }
     render();
   }
+}
+function applyCustomIfReady(){
+  var f=document.getElementById('cfrom');
+  var t=document.getElementById('cto');
+  if(f&&t&&f.value&&t.value){
+    customFrom=f.value;customTo=t.value;
+  }
+}
+function applyCustom(){
+  var f=document.getElementById('cfrom');
+  var t=document.getElementById('cto');
+  if(!f||!t||!f.value||!t.value){
+    alert('בחר תאריך התחלה וסיום');return;
+  }
+  customFrom=f.value;customTo=t.value;
+  setDR('custom');
+  render();
 }
 function render(){
   document.getElementById('sub').textContent=label(range);
   if(range==='compare'){cmp();return;}
   if(range==='comm'){commTab();return;}
-  if(range==='custom'&&(!customFrom||!customTo)){
-    // Fetch active coaching count for metric card
-  fetch('/coaching').then(function(r){return r.json();}).then(function(j){
-    var el=document.getElementById('activeCoachingCount');
-    if(el&&j.ok){el.textContent=j.clients.length;}
-  }).catch(function(){});
-  document.getElementById('content').innerHTML=
-      '<div class="card" style="padding:20px">'+
-      '<div class="card-title" style="margin-bottom:12px">בחר טווח תאריכים</div>'+
-      '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'+
-      '<input type="date" id="cfrom" style="border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px">'+
-      '<span style="color:var(--text3)">עד</span>'+
-      '<input type="date" id="cto" style="border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px">'+
-      '<button class="btn" style="background:var(--blue);color:#fff;border-color:var(--blue)" onclick="applyCustom()">הצג</button>'+
-      '</div></div>';
-    return;
-  }
   const L=filter(data.leads||[],range,null);
   const S=filter(data.sales||[],range,'date_mm00jx0c');
   const T=filter(data.stepup||[],range,'date4');
@@ -275,7 +288,20 @@ function funnel(contact,adv,su,sold){
        '<span class="funnel-pct" style="color:'+s.t+'">'+p+'%'+cv+'</span>'+
        '</span></div>';
   });
-  return h+'</div>';
+  // שורת ליוויים פעילים
+  h+='<div class="funnel-arr">▼</div>';
+  h+='<div class="funnel-active">'+
+     '<span class="funnel-label" style="color:#15803d">ליוויים פעילים כעת</span>'+
+     '<span class="funnel-right">'+
+     '<span class="funnel-num c-green" id="funnelActiveCount">...</span>'+
+     '</span></div>';
+  h+='</div>';
+  // טען את המספר
+  fetch('/coaching').then(function(r){return r.json();}).then(function(j){
+    var el=document.getElementById('funnelActiveCount');
+    if(el&&j.ok)el.textContent=j.totalActive;
+  }).catch(function(){});
+  return h;
 }
 function srcTable(sm,total){
   let rows='';
@@ -300,15 +326,12 @@ function srcTable(sm,total){
   return '<table><tr><th>מקור</th><th style="text-align:center">קשר</th><th style="text-align:center">ייעוץ</th><th style="text-align:center">STEP-UP</th><th style="text-align:center">ליווי</th><th style="text-align:center">המרה</th></tr>'+rows+'</table>';
 }
 function coach(items){
-  // Show loading state, fetch from /coaching endpoint
   fetch('/coaching').then(function(r){return r.json();}).then(function(j){
     var el=document.getElementById('coachingDiv');
     if(!el)return;
     if(!j.ok){el.innerHTML='<div style="color:#dc2626;font-size:13px">שגיאה: '+j.error+'</div>';return;}
     if(!j.clients.length){el.innerHTML='<div style="color:#9ca3af;font-size:13px;text-align:center;padding:16px 0">אין ליוויים פעילים</div>';return;}
-    var h='';
-    // Header row
-    h='<table style="width:100%"><tr>'+
+    var h='<table style="width:100%"><tr>'+
       '<th style="text-align:right;color:var(--text3);font-size:11px;padding:6px 8px;border-bottom:1px solid var(--border)">שם</th>'+
       '<th style="text-align:center;color:var(--text3);font-size:11px;padding:6px 8px;border-bottom:1px solid var(--border)">נרכשו</th>'+
       '<th style="text-align:center;color:var(--text3);font-size:11px;padding:6px 8px;border-bottom:1px solid var(--border)">בוצעו</th>'+
@@ -337,10 +360,7 @@ function coach(items){
     });
     h+='</table>';
     el.innerHTML=h;
-  }).catch(function(e){
-    var el=document.getElementById('coachingDiv');
-    if(el)el.innerHTML='<div style="color:#9ca3af;font-size:13px">טוען...</div>';
-  });
+  }).catch(function(){});
   return '<div id="coachingDiv" style="color:#9ca3af;font-size:13px;text-align:center;padding:8px">טוען ליוויים...</div>';
 }
 function cmp(){
@@ -396,7 +416,6 @@ function renderCalendarShell(){
   if(!calFrom)calFrom=toISO(new Date(now.getFullYear(),0,1));
   if(!calTo){var fut=new Date(now);fut.setMonth(fut.getMonth()+3);calTo=toISO(fut);}
   document.getElementById('content').innerHTML=
-
     '<div class="cal-controls">'+
     '<input type="date" id="calFrom" value="'+calFrom+'" onchange="calFrom=this.value">'+
     '<span style="color:var(--text3)">עד</span>'+
@@ -414,42 +433,6 @@ function renderCalendarShell(){
     '</div>'+
     '<div id="calData" style="text-align:center;padding:30px;color:#6b7280">טוען נתוני יומן...</div>';
   document.getElementById('calSearch').addEventListener('input',function(){calClientFilter=this.value;renderCalendarData();});
-}
-function calControlsHTML(){
-  var durs=[
-    {v:0,l:'הכל'},
-    {v:20,l:'ייעוץ'},
-    {v:30,l:'שירות'},
-    {v:60,l:'ליווי'},
-    {v:120,l:'STEP-UP'}
-  ];
-  var durBtns=durs.map(function(d){
-    var active=calDuration===d.v;
-    var style=active?'background:#0891b2;color:#fff;border-color:#0891b2;':'';
-    return '<button class="btn" style="'+style+'" onclick="calDuration='+d.v+';renderCalendarData()">'+d.l+'</button>';
-  }).join('');
-  return '<div class="cal-controls">'+
-    '<input type="date" id="calFrom" value="'+calFrom+'" onchange="calFrom=this.value">'+
-    '<span style="color:var(--text3)">עד</span>'+
-    '<input type="date" id="calTo" value="'+calTo+'" onchange="calTo=this.value">'+
-    '<button class="btn" style="background:#0891b2;color:#fff;border-color:#0891b2" onclick="loadCalendar()">טען</button>'+
-    '</div>'+
-    '<div style="display:flex;gap:6px;align-items:center;margin-bottom:12px;flex-wrap:wrap">'+
-    '<input type="text" id="calSearch" class="cal-search" placeholder="חיפוש לקוח..." value="'+calClientFilter+'" dir="rtl" style="text-align:right">'+
-    '<span style="color:var(--text3);font-size:12px;margin-right:4px">סנן:</span>'+
-    durBtns+
-    '</div>';
-}
-function attachSearchListener(){
-  setTimeout(function(){
-    var el=document.getElementById('calSearch');
-    if(el){
-      el.removeEventListener('input',el._searchHandler);
-      el._searchHandler=function(){calClientFilter=this.value;renderCalendarData();};
-      el.addEventListener('input',el._searchHandler);
-      el.focus();
-    }
-  },10);
 }
 async function loadCalendar(){
   var fromEl=document.getElementById('calFrom');
@@ -487,7 +470,6 @@ function renderCalendarData(){
     }
   });
   var clientList=Object.entries(clients).sort(function(a,b){return b[1].ליווי-a[1].ליווי;});
-  // Update duration button styles
   ['durAll','dur20','dur30','dur60','dur120'].forEach(function(id,i){
     var el=document.getElementById(id);
     var vals=[0,20,30,60,120];
@@ -549,17 +531,9 @@ function setCalRange(r){
     calFrom=toISO(new Date(now.getFullYear(),0,1));
     var fut2=new Date(now);fut2.setMonth(fut2.getMonth()+3);calTo=toISO(fut2);
   }
-  // Update date inputs
   var f=document.getElementById('calFrom');var t=document.getElementById('calTo');
   if(f)f.value=calFrom;if(t)t.value=calTo;
   loadCalendar();
-}
-function applyCustom(){
-  var f=document.getElementById('cfrom');
-  var t=document.getElementById('cto');
-  if(!f||!t||!f.value||!t.value)return;
-  customFrom=f.value;customTo=t.value;
-  render();
 }
 load();
 setInterval(load,5*60*1000);
