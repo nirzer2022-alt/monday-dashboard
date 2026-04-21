@@ -297,10 +297,10 @@ function funnel(contact,adv,su,sold){
      '</span></div>';
   h+='</div>';
   // טען את המספר
-  fetch('/coaching').then(function(r){return r.json();}).then(function(j){
-    var el=document.getElementById('funnelActiveCount');
-    if(el&&j.ok)el.textContent=j.totalActive;
-  }).catch(function(){});
+  setTimeout(function(){
+  var el=document.getElementById('funnelActiveCount');
+  if(el)el.textContent=totalActiveCoaching||'...';
+},100);
   return h;
 }
 function srcTable(sm,total){
