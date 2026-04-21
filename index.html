@@ -525,7 +525,7 @@ function setCalRange(r){
   }
   else if(r==='month'){
     calFrom=toISO(new Date(now.getFullYear(),now.getMonth(),1));
-    var fut=new Date(now);fut.setMonth(fut.getMonth()+1);calTo=toISO(fut);
+    calTo=toISO(now);
   }
   else if(r==='year'){
     calFrom=toISO(new Date(now.getFullYear(),0,1));
