@@ -60,8 +60,6 @@ async function getAllData() {
   return Object.fromEntries(results);
 }
 
-// ─── Google Calendar JWT Auth ─────────────────────────────────────────────────
-
 function base64url(str) {
   return Buffer.from(str).toString('base64')
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
@@ -111,7 +109,7 @@ async function getGoogleToken(creds) {
   });
 }
 
-// קריאה בודדת — חלון אחד
+// קריאה בודדת
 async function fetchCalendarEvents(token, calendarId, timeMin, timeMax) {
   const params = new URLSearchParams({
     timeMin: timeMin.toISOString(),
@@ -145,7 +143,6 @@ async function fetchCalendarEvents(token, calendarId, timeMin, timeMax) {
 async function fetchAllCalendarEvents(token, calendarId, timeMin, timeMax) {
   const allItems = [];
   let current = new Date(timeMin);
-
   while (current < timeMax) {
     const chunkEnd = new Date(Math.min(
       current.getTime() + 90 * 24 * 60 * 60 * 1000,
@@ -155,7 +152,6 @@ async function fetchAllCalendarEvents(token, calendarId, timeMin, timeMax) {
     allItems.push(...(result.items || []));
     current = new Date(chunkEnd);
   }
-
   return { items: allItems };
 }
 
@@ -203,7 +199,6 @@ function classifyEvent(event) {
   };
 }
 
-// /calendar משתמש בקריאות מרובות — ללא מגבלת 2500
 async function getCalendarData(timeMin, timeMax) {
   if (!CALENDAR_CREDS) throw new Error('GOOGLE_CREDENTIALS not set');
   const token = await getGoogleToken(CALENDAR_CREDS);
@@ -259,7 +254,6 @@ const server = http.createServer(async (req, res) => {
 
   if (req.url === '/coaching') {
     try {
-      // שלב 1 — שמות מהמאנדיי + סך ליוויים פעילים
       const coachingQuery = `{
         boards(ids: 9949694755) {
           groups(ids: ["new_group29179"]) {
@@ -276,7 +270,6 @@ const server = http.createServer(async (req, res) => {
       const active = mondayRes.data?.boards?.[0]?.groups?.[0]?.items_page?.items || [];
       const totalActive = active.length;
 
-      // שלב 2 — אירועים מהיומן בקריאות מרובות — שנה אחורה + 30 יום קדימה
       const now = new Date();
       const timeMin = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
       const timeMax = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
@@ -297,7 +290,6 @@ const server = http.createServer(async (req, res) => {
         ...(r3.items || []),
       ].filter(e => e.status !== 'cancelled' && e.start?.dateTime);
 
-      // שלב 3 — התאמה: שם בתחילת הכותרת + 60 דקות בלבד
       const clients = active.map(item => {
         const fullName = item.name;
         const searchName = item.name.split(' ')[0];
@@ -308,11 +300,23 @@ const server = http.createServer(async (req, res) => {
           const start = new Date(e.start.dateTime);
           const end = new Date(e.end.dateTime);
           const duration = (end - start) / 60000;
-          const nameMatch =
+          if (!VALID_DURATIONS.includes(duration)) return false;
+
+          // קודם שם מלא — מדויק יותר
+          const fullMatch =
+            title.startsWith(fullName + ' -') ||
+            title.startsWith(fullName + ' —') ||
+            title.startsWith(fullName + '-');
+
+          if (fullMatch) return true;
+
+          // שם פרטי — רק אם השם המלא לא מופיע (מונע כפל דניאלים)
+          const firstMatch =
             title.startsWith(searchName + ' -') ||
             title.startsWith(searchName + ' —') ||
             title.startsWith(searchName + '-');
-          return nameMatch && VALID_DURATIONS.includes(duration);
+
+          return firstMatch;
         });
 
         const done = matched.length;
