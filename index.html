@@ -152,7 +152,7 @@ function filter(items,r,col){
     e2=new Date(customTo);e2.setHours(23,59,59);
     return items.filter(i=>{const d=getDate(i,col);return d&&d>=s&&d<=e2;});
   }
-  else return items;
+  else return [];
   return items.filter(i=>{const d=getDate(i,col);return d&&d>=s;});
 }
 function label(r){
