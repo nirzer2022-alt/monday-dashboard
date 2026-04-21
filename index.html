@@ -196,7 +196,7 @@ function reload(){
   else load();
 }
 function go(r,el){
-  document.querySelectorAll('#mainTabs .tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('#mainTabs .tab, #mainTabs button').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
   range=r;
   setDR(r);
