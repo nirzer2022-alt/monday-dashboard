@@ -240,7 +240,7 @@ function render(){
   document.getElementById('sub').textContent=label(range);
   if(range==='compare'){cmp();return;}
   if(range==='comm'){commTab();return;}
-  const L=filter(data.leads||[],range,null);
+  const L=filter(data.leads||[],range,'date_mm00ds06');
   const S=filter(data.sales||[],range,'date_mm00jx0c');
   const T=filter(data.stepup||[],range,'date4');
   const C=data.coaching||[];
