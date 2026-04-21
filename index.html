@@ -537,6 +537,9 @@ function setCalRange(r){
 }
 load();
 setInterval(load,5*60*1000);
+  fetch('/coaching').then(r=>r.json()).then(j=>{
+  if(j.ok)totalActiveCoaching=j.totalActive;
+});
 </script>
 </body>
 </html>
