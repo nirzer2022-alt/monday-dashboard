@@ -11,7 +11,7 @@ const CALENDAR_ID_STEPUP = '3fafd7868d8f30ef280cf29ecbd74ef79f75ba465c6c0b488145
 const CALENDAR_ID_CONSULT = '96776edd0002b6adf80277d291cc40ca40f5c49b0e37f390226ca1758fc4055a@group.calendar.google.com';
 
 const BOARDS = {
-  leads:    { id: 9949694708, cols: ['lead_status', 'color_mkvd5y1g'] },
+  leads: { id: 9949694708, cols: ['lead_status', 'color_mkvd5y1g', 'date_mm00ds06'] },
   sales:    { id: 9949694887, cols: ['lead_status'] },
   stepup:   { id: 9950584665, cols: ['lead_status'] },
   coaching: { id: 9949694755, cols: ['status', 'numeric_mky8ze04'] },
