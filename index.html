@@ -141,7 +141,7 @@ let totalActiveCoaching=0;
 const fd=d=>d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();
 const toISO=d=>d.toISOString().split('T')[0];
 const gv=(item,col)=>item.column_values?.find(c=>c.id===col)?.text||'';
-function getDate(item,col){if(col){const v=gv(item,col);if(v&&v.trim())return new Date(v);}return item.created_at?new Date(item.created_at):null;}
+function getDate(item,col){if(col){const v=gv(item,col);if(v&&v.trim())return new Date(v);return null;}return item.created_at?new Date(item.created_at):null;}
 function filter(items,r,col){
   const now=new Date();let s,e2;
   if(r==='today'){s=new Date(now);s.setHours(0,0,0,0);}
