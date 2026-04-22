@@ -368,7 +368,7 @@ function cmp(){
   for(let m=0;m<=now.getMonth();m++){
     const s=new Date(now.getFullYear(),m,1),e=new Date(now.getFullYear(),m+1,0,23,59,59);
     function inM(arr,col){return arr.filter(function(i){const d=col?new Date(gv(i,col)||''):new Date(i.created_at||'');if(isNaN(d))return false;return d>=s&&d<=e;});}
-    const L=inM(data.leads||[],null),S=inM(data.sales||[],'date_mm00jx0c'),T=inM(data.stepup||[],'date4');
+    const L=inM(data.leads||[],'date_mm00ds06'),S=inM(data.sales||[],'date_mm00jx0c'),T=inM(data.stepup||[],'date4');
     const c=L.length,a=L.filter(function(i){return ADV.includes(gv(i,'lead_status'));}).length,su=T.length;
     const sold=T.filter(function(i){return gv(i,'status')==='נמכר ליווי';}).length+S.filter(function(i){return gv(i,'deal_stage')==='נמכר ליווי';}).length;
     if(c>0||m===now.getMonth())md.push({m:m,name:MO[m],s:s,e:e,c:c,a:a,su:su,sold:sold});
