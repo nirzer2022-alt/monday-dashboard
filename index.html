@@ -271,7 +271,7 @@ function render(){
   const contact=L.length;
   const adv=L.filter(i=>ADV.includes(gv(i,'lead_status'))).length+S.filter(i=>['פגישת StepUp','נמכר ליווי','פולאו-אפ'].includes(gv(i,'deal_stage'))).length;
   const su=T.length;
-  const sold=T.filter(i=>gv(i,'status')==='נמכר ליווי').length+S.filter(i=>gv(i,'deal_stage')==='נמכר ליווי').length;
+  const sold=S.filter(i=>gv(i,'lead_status')==='נמכר ליווי').length;
   const c1=contact>0?Math.round(adv/contact*100):0;
   const c2=adv>0?Math.round(su/adv*100):0;
   const c3=su>0?Math.round(sold/su*100):0;
@@ -408,7 +408,7 @@ function cmp(){
     function inM(arr,col){return arr.filter(function(i){const d=col?new Date(gv(i,col)||''):new Date(i.created_at||'');if(isNaN(d))return false;return d>=s&&d<=e;});}
     const L=inM(data.leads||[],'date_mm00ds06'),S=inM(data.sales||[],'date_mm00jx0c'),T=inM(data.stepup||[],'date4');
     const c=L.length,a=L.filter(function(i){return ADV.includes(gv(i,'lead_status'));}).length,su=T.length;
-    const sold=T.filter(function(i){return gv(i,'status')==='נמכר ליווי';}).length+S.filter(function(i){return gv(i,'deal_stage')==='נמכר ליווי';}).length;
+    const sold=S.filter(function(i){return gv(i,'lead_status')==='נמכר ליווי';}).length;
     if(c>0||m===now.getMonth())md.push({m:m,name:MO[m],s:s,e:e,c:c,a:a,su:su,sold:sold});
   }
   const mx=Math.max.apply(null,md.map(function(d){return d.c;}));const mx2=mx||1;
