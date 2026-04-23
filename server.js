@@ -165,9 +165,12 @@ function classifyEvent(event) {
   const knownDuration = duration===20 || duration===30 || duration===60 || duration===120;
   if (!knownDuration) return null;
 
-  // חייב להכיל מקף — פורמט לקוחות: "שם - סוג פגישה". ללא מקף = פגישה פנימית
-  const hasDash = summary.includes(' - ') || summary.includes(' — ') || (summary.includes('-') && !summary.startsWith('-'));
-  if (!hasDash) return null;
+  // פגישות 120 דקות (STEP-UP) — פורמט שונה: "שם and ניר זד", בלי מקף — לא מסננים
+  // פגישות אחרות — חייב מקף: "שם - סוג פגישה". ללא מקף = פגישה פנימית
+  if (duration !== 120) {
+    const hasDash = summary.includes(' - ') || summary.includes(' — ') || (summary.includes('-') && !summary.startsWith('-'));
+    if (!hasDash) return null;
+  }
 
   let type = 'אחר';
   if (duration===120) type = 'step-up';
