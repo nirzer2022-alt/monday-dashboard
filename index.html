@@ -200,7 +200,6 @@ function go(r,el){
   el.classList.add('active');
   range=r;
   setDR(r);
-  // הצג/הסתר שדות טווח מותאם
   var customInputs=document.getElementById('customRangeInputs');
   if(customInputs)customInputs.style.display=(r==='custom')?'flex':'none';
   var mainTabs=document.getElementById('mainTabs');
@@ -236,6 +235,31 @@ function applyCustom(){
   setDR('custom');
   render();
 }
+
+// ─── חישוב טווח לפי range ───────────────────────────────────────────────────
+function getRangeDates(r){
+  const now=new Date();
+  if(r==='today'){
+    const s=new Date(now);s.setHours(0,0,0,0);
+    const e=new Date(now);e.setHours(23,59,59);
+    return {from:toISO(s),to:toISO(e)};
+  }
+  if(r==='week'){
+    const s=new Date(now);s.setDate(now.getDate()-now.getDay());s.setHours(0,0,0,0);
+    return {from:toISO(s),to:toISO(now)};
+  }
+  if(r==='month'){
+    const s=new Date(now.getFullYear(),now.getMonth(),1);
+    return {from:toISO(s),to:toISO(now)};
+  }
+  if(r==='custom'&&customFrom&&customTo){
+    return {from:customFrom,to:customTo};
+  }
+  // ברירת מחדל: שנה אחורה
+  const s=new Date(now.getTime()-365*24*60*60*1000);
+  return {from:toISO(s),to:toISO(now)};
+}
+
 function render(){
   document.getElementById('sub').textContent=label(range);
   if(range==='compare'){cmp();return;}
@@ -244,31 +268,35 @@ function render(){
   const S=filter(data.sales||[],range,'date_mm00jx0c');
   const T=filter(data.stepup||[],range,'date4');
   const C=data.coaching||[];
-  const M=filter(data.sessions||[],range,null);
   const contact=L.length;
   const adv=L.filter(i=>ADV.includes(gv(i,'lead_status'))).length+S.filter(i=>['פגישת StepUp','נמכר ליווי','פולאו-אפ'].includes(gv(i,'deal_stage'))).length;
   const su=T.length;
   const sold=T.filter(i=>gv(i,'status')==='נמכר ליווי').length+S.filter(i=>gv(i,'deal_stage')==='נמכר ליווי').length;
-  const sess=M.filter(i=>gv(i,'status')==='התקיימה').length;
   const c1=contact>0?Math.round(adv/contact*100):0;
   const c2=adv>0?Math.round(su/adv*100):0;
   const c3=su>0?Math.round(sold/su*100):0;
   const sm={};SRC.forEach(s=>sm[s.key]={c:0,a:0,su:0,sold:0});
   L.forEach(i=>{const s=gv(i,'color_mkvd5y1g');if(!sm[s])sm[s]={c:0,a:0,su:0,sold:0};sm[s].c++;if(ADV.includes(gv(i,'lead_status')))sm[s].a++;});
+
+  // טען coaching עם טווח תאריכים מדויק
+  const dates=getRangeDates(range);
+  const coachingUrl='/coaching?from='+dates.from+'&to='+dates.to;
+
   document.getElementById('content').innerHTML=
     '<div class="metrics">'+
     '<div class="mc"><div class="mc-label">יצרו קשר</div><div class="mc-value c-blue">'+contact+'</div><div class="mc-sub c-text2">כניסות</div></div>'+
     '<div class="mc"><div class="mc-label">שיחת ייעוץ</div><div class="mc-value c-green">'+adv+'</div><div class="mc-sub c-green">'+c1+'% המרה</div></div>'+
     '<div class="mc"><div class="mc-label">פגישת STEP-UP</div><div class="mc-value c-amber">'+su+'</div><div class="mc-sub c-amber">'+c2+'% מהשיחות</div></div>'+
     '<div class="mc"><div class="mc-label">רכישת ליווי</div><div class="mc-value c-purple">'+sold+'</div><div class="mc-sub c-purple">'+c3+'% מ-STEP-UP</div></div>'+
-    '<div class="mc"><div class="mc-label">פגישות ליווי</div><div class="mc-value c-text2">'+sess+'</div><div class="mc-sub c-text2">התקיימו</div></div>'+
+    '<div class="mc"><div class="mc-label">פגישות ליווי</div><div class="mc-value c-text2" id="metricDone">...</div><div class="mc-sub c-text2">בוצעו בטווח</div></div>'+
     '</div>'+
     '<div class="row2">'+
     '<div class="card"><div class="card-title">משפך המרה</div>'+funnel(contact,adv,su,sold)+'</div>'+
     '<div class="card"><div class="card-title">פירוט מקורות</div>'+srcTable(sm,contact)+'</div>'+
     '</div>'+
-    '<div class="card" style="margin-bottom:12px"><div class="card-title">ליוויים פעילים</div>'+coach(C)+'</div>';
+    '<div class="card" style="margin-bottom:12px"><div class="card-title">ליוויים פעילים</div>'+coach(coachingUrl)+'</div>';
 }
+
 function funnel(contact,adv,su,sold){
   const steps=[
     {n:'יצרו קשר',v:contact,bg:'#dbeafe',t:'#1d4ed8',w:100},
@@ -288,7 +316,6 @@ function funnel(contact,adv,su,sold){
        '<span class="funnel-pct" style="color:'+s.t+'">'+p+'%'+cv+'</span>'+
        '</span></div>';
   });
-  // שורת ליוויים פעילים
   h+='<div class="funnel-arr">▼</div>';
   h+='<div class="funnel-active">'+
      '<span class="funnel-label" style="color:#15803d">ליוויים פעילים כעת</span>'+
@@ -296,13 +323,9 @@ function funnel(contact,adv,su,sold){
      '<span class="funnel-num c-green" id="funnelActiveCount">...</span>'+
      '</span></div>';
   h+='</div>';
-  // טען את המספר
-  setTimeout(function(){
-  var el=document.getElementById('funnelActiveCount');
-  if(el)el.textContent=totalActiveCoaching||'...';
-},3000);
   return h;
 }
+
 function srcTable(sm,total){
   let rows='';
   SRC.forEach(function(s){
@@ -325,12 +348,23 @@ function srcTable(sm,total){
   });
   return '<table><tr><th>מקור</th><th style="text-align:center">קשר</th><th style="text-align:center">ייעוץ</th><th style="text-align:center">STEP-UP</th><th style="text-align:center">ליווי</th><th style="text-align:center">המרה</th></tr>'+rows+'</table>';
 }
-function coach(items){
-  fetch('/coaching').then(function(r){return r.json();}).then(function(j){
+
+// תיקון: coach מקבל url עם טווח ומעדכן גם metricDone ו-funnelActiveCount
+function coach(coachingUrl){
+  fetch(coachingUrl).then(function(r){return r.json();}).then(function(j){
     var el=document.getElementById('coachingDiv');
     if(!el)return;
+    // עדכן מטריקה עליונה
+    var metricDone=document.getElementById('metricDone');
+    if(metricDone&&j.ok)metricDone.textContent=j.doneTotal||0;
+    // עדכן מספר פעילים במשפך
+    var funnelEl=document.getElementById('funnelActiveCount');
+    if(funnelEl&&j.ok)funnelEl.textContent=j.totalActive||0;
+    // עדכן totalActiveCoaching גלובלי
+    if(j.ok)totalActiveCoaching=j.totalActive;
+
     if(!j.ok){el.innerHTML='<div style="color:#dc2626;font-size:13px">שגיאה: '+j.error+'</div>';return;}
-    if(!j.clients.length){el.innerHTML='<div style="color:#9ca3af;font-size:13px;text-align:center;padding:16px 0">אין ליוויים פעילים</div>';return;}
+    if(!j.clients||!j.clients.length){el.innerHTML='<div style="color:#9ca3af;font-size:13px;text-align:center;padding:16px 0">אין ליוויים פעילים</div>';return;}
     var h='<table style="width:100%"><tr>'+
       '<th style="text-align:right;color:var(--text3);font-size:11px;padding:6px 8px;border-bottom:1px solid var(--border)">שם</th>'+
       '<th style="text-align:center;color:var(--text3);font-size:11px;padding:6px 8px;border-bottom:1px solid var(--border)">נרכשו</th>'+
@@ -360,9 +394,13 @@ function coach(items){
     });
     h+='</table>';
     el.innerHTML=h;
-  }).catch(function(){});
+  }).catch(function(e){
+    var el=document.getElementById('coachingDiv');
+    if(el)el.innerHTML='<div style="color:#dc2626;font-size:13px">שגיאת רשת: '+e.message+'</div>';
+  });
   return '<div id="coachingDiv" style="color:#9ca3af;font-size:13px;text-align:center;padding:8px">טוען ליוויים...</div>';
 }
+
 function cmp(){
   const now=new Date();const md=[];
   for(let m=0;m<=now.getMonth();m++){
@@ -392,6 +430,7 @@ function cmp(){
   });
   document.getElementById('content').innerHTML=h+'</div>';
 }
+
 async function commTab(){
   document.getElementById('content').innerHTML='<div style="text-align:center;padding:30px;color:#6b7280">טוען נתוני תקשורת... עד 30 שניות</div>';
   try{
@@ -407,9 +446,10 @@ async function commTab(){
       '</div>'+
       '<div class="card"><div class="card-title">פירוט לפי ליד</div>'+j.table+'</div>';
   }catch(e){
-    document.getElementById('content').innerHTML='<div class="err">שגיאה: '+e.message+'</div>';
+    document.getElementById('content').innerHTML='<div class="err">'+e.message+'</div>';
   }
 }
+
 function renderCalendarShell(){
   document.getElementById('sub').textContent='יומן פגישות';
   const now=new Date();
@@ -434,6 +474,7 @@ function renderCalendarShell(){
     '<div id="calData" style="text-align:center;padding:30px;color:#6b7280">טוען נתוני יומן...</div>';
   document.getElementById('calSearch').addEventListener('input',function(){calClientFilter=this.value;renderCalendarData();});
 }
+
 async function loadCalendar(){
   var fromEl=document.getElementById('calFrom');
   var toEl=document.getElementById('calTo');
@@ -452,6 +493,7 @@ async function loadCalendar(){
     if(d2)d2.innerHTML='<div class="err">שגיאה: '+e.message+'</div>';
   }
 }
+
 function renderCalendarData(){
   var events=calEvents.slice();
   if(calDuration>0){events=events.filter(function(e){return Math.abs(e.duration-calDuration)<=5;});}
@@ -515,6 +557,7 @@ function renderCalendarData(){
   var dd=document.getElementById('calData');
   if(dd)dd.innerHTML=html;
 }
+
 function setCalRange(r){
   var now=new Date();
   if(r==='today'){calFrom=toISO(now);calTo=toISO(now);}
@@ -535,10 +578,18 @@ function setCalRange(r){
   if(f)f.value=calFrom;if(t)t.value=calTo;
   loadCalendar();
 }
+
+// טעינה ראשונית
 load();
-setInterval(load,5*60*1000);
-  fetch('/coaching').then(r=>r.json()).then(j=>{
-  if(j.ok)totalActiveCoaching=j.totalActive;
+setInterval(load, 5*60*1000);
+
+// טען totalActive בצורה עצמאית לתצוגה ראשונית של המשפך
+fetch('/coaching').then(r=>r.json()).then(j=>{
+  if(j.ok){
+    totalActiveCoaching=j.totalActive;
+    var el=document.getElementById('funnelActiveCount');
+    if(el)el.textContent=j.totalActive;
+  }
 });
 </script>
 </body>
