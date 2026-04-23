@@ -496,9 +496,10 @@ async function loadCalendar(){
 
 function getClientNames(){
   // בונה Set של שמות לקוחות מהמאנדיי (שם מלא + שם פרטי)
+  // מכל הבורדים הרלוונטיים: coaching (ליווי) + stepup
   var names=new Set();
-  var coaching=data.coaching||[];
-  coaching.forEach(function(item){
+  var allClients=[].concat(data.coaching||[]).concat(data.stepup||[]).concat(data.sales||[]);
+  allClients.forEach(function(item){
     if(!item.name)return;
     names.add(item.name.trim().toLowerCase());
     names.add(item.name.trim().split(' ')[0].toLowerCase());
