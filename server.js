@@ -10,10 +10,11 @@ const CALENDAR_ID = process.env.CALENDAR_ID || 'nirzer2022@gmail.com';
 const CALENDAR_ID_STEPUP = '3fafd7868d8f30ef280cf29ecbd74ef79f75ba465c6c0b488145246726bae0e7@group.calendar.google.com';
 const CALENDAR_ID_CONSULT = '96776edd0002b6adf80277d291cc40ca40f5c49b0e37f390226ca1758fc4055a@group.calendar.google.com';
 
+// תיקון 1: הוספת date4 ל-stepup ו-date_mm00jx0c ל-sales
 const BOARDS = {
-  leads: { id: 9949694708, cols: ['lead_status', 'color_mkvd5y1g', 'date_mm00ds06'] },
-  sales:    { id: 9949694887, cols: ['lead_status'] },
-  stepup:   { id: 9950584665, cols: ['lead_status'] },
+  leads:    { id: 9949694708, cols: ['lead_status', 'color_mkvd5y1g', 'date_mm00ds06'] },
+  sales:    { id: 9949694887, cols: ['lead_status', 'date_mm00jx0c'] },
+  stepup:   { id: 9950584665, cols: ['lead_status', 'date4'] },
   coaching: { id: 9949694755, cols: ['status', 'numeric_mky8ze04'] },
   sessions: { id: 9950821064, cols: ['status'] },
 };
@@ -109,7 +110,6 @@ async function getGoogleToken(creds) {
   });
 }
 
-// קריאה בודדת
 async function fetchCalendarEvents(token, calendarId, timeMin, timeMax) {
   const params = new URLSearchParams({
     timeMin: timeMin.toISOString(),
@@ -139,7 +139,6 @@ async function fetchCalendarEvents(token, calendarId, timeMin, timeMax) {
   });
 }
 
-// קריאות מרובות — חלונות של 3 חודשים, ללא מגבלת 2500
 async function fetchAllCalendarEvents(token, calendarId, timeMin, timeMax) {
   const allItems = [];
   let current = new Date(timeMin);
@@ -252,8 +251,17 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (req.url === '/coaching') {
+  // תיקון 2: /coaching מקבל from/to ומחזיר doneTotal
+  if (req.url?.startsWith('/coaching')) {
     try {
+      // קריאת פרמטרי תאריך
+      const url = new URL(req.url, 'http://localhost');
+      const from = url.searchParams.get('from');
+      const to   = url.searchParams.get('to');
+      const timeMin = from ? new Date(from) : new Date(new Date().getTime() - 365 * 24 * 60 * 60 * 1000);
+      const timeMax = to   ? new Date(to)   : new Date(new Date().getTime() + 30  * 24 * 60 * 60 * 1000);
+      timeMax.setHours(23, 59, 59);
+
       const coachingQuery = `{
         boards(ids: 9949694755) {
           groups(ids: ["new_group29179"]) {
@@ -270,10 +278,6 @@ const server = http.createServer(async (req, res) => {
       const active = mondayRes.data?.boards?.[0]?.groups?.[0]?.items_page?.items || [];
       const totalActive = active.length;
 
-      const now = new Date();
-      const timeMin = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-      const timeMax = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-
       const token = await getGoogleToken(CALENDAR_CREDS);
       const [r1, r2, r3] = await Promise.all([
         fetchAllCalendarEvents(token, CALENDAR_ID, timeMin, timeMax),
@@ -281,7 +285,6 @@ const server = http.createServer(async (req, res) => {
         fetchAllCalendarEvents(token, CALENDAR_ID_CONSULT, timeMin, timeMax),
       ]);
 
-      // ליווי = 60 דקות בלבד
       const VALID_DURATIONS = [60];
 
       const allEvents = [
@@ -302,7 +305,6 @@ const server = http.createServer(async (req, res) => {
           const duration = (end - start) / 60000;
           if (!VALID_DURATIONS.includes(duration)) return false;
 
-          // קודם שם מלא — מדויק יותר
           const fullMatch =
             title.startsWith(fullName + ' -') ||
             title.startsWith(fullName + ' —') ||
@@ -310,7 +312,6 @@ const server = http.createServer(async (req, res) => {
 
           if (fullMatch) return true;
 
-          // שם פרטי — רק אם השם המלא לא מופיע (מונע כפל דניאלים)
           const firstMatch =
             title.startsWith(searchName + ' -') ||
             title.startsWith(searchName + ' —') ||
@@ -328,13 +329,23 @@ const server = http.createServer(async (req, res) => {
         return { name: fullName, purchased, done, remaining, alert, last };
       });
 
+      // תיקון 3: doneTotal — סכום כל הליוויים שבוצעו בטווח
+      const doneTotal = clients.reduce((s, c) => s + c.done, 0);
+
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ ok: true, totalActive, clients }));
+      res.end(JSON.stringify({ ok: true, totalActive, doneTotal, clients }));
 
     } catch(e) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ ok: false, error: e.message }));
     }
+    return;
+  }
+
+  // תיקון 4: stub ל-/comm — מונע החזרת HTML במקום JSON
+  if (req.url === '/comm') {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ ok: false, error: 'Voicenter לא מחובר עדיין' }));
     return;
   }
 
