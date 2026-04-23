@@ -165,6 +165,10 @@ function classifyEvent(event) {
   const knownDuration = duration===20 || duration===30 || duration===60 || duration===120;
   if (!knownDuration) return null;
 
+  // חייב להכיל מקף — פורמט לקוחות: "שם - סוג פגישה". ללא מקף = פגישה פנימית
+  const hasDash = summary.includes(' - ') || summary.includes(' — ') || (summary.includes('-') && !summary.startsWith('-'));
+  if (!hasDash) return null;
+
   let type = 'אחר';
   if (duration===120) type = 'step-up';
   else if (duration===60) type = 'ליווי';
@@ -305,17 +309,26 @@ const server = http.createServer(async (req, res) => {
           const duration = (end - start) / 60000;
           if (!VALID_DURATIONS.includes(duration)) return false;
 
+          // פורמט עם מקף: "עינת - ליווי" / "עינת— ליווי"
+          // פורמט עם שעה: "עינת 08:15" (אחרי השם מגיע רווח + ספרה)
+          // פורמט שם בלבד: "עינת"
+          const afterFull = title.slice(fullName.length);
           const fullMatch =
             title.startsWith(fullName + ' -') ||
             title.startsWith(fullName + ' —') ||
-            title.startsWith(fullName + '-');
+            title.startsWith(fullName + '-') ||
+            (title.startsWith(fullName + ' ') && /^\d/.test(afterFull.slice(1))) ||
+            title === fullName;
 
           if (fullMatch) return true;
 
+          const afterFirst = title.slice(searchName.length);
           const firstMatch =
             title.startsWith(searchName + ' -') ||
             title.startsWith(searchName + ' —') ||
-            title.startsWith(searchName + '-');
+            title.startsWith(searchName + '-') ||
+            (title.startsWith(searchName + ' ') && /^\d/.test(afterFirst.slice(1))) ||
+            title === searchName;
 
           return firstMatch;
         });
