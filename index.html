@@ -494,8 +494,27 @@ async function loadCalendar(){
   }
 }
 
+function getClientNames(){
+  // בונה Set של שמות לקוחות מהמאנדיי (שם מלא + שם פרטי)
+  var names=new Set();
+  var coaching=data.coaching||[];
+  coaching.forEach(function(item){
+    if(!item.name)return;
+    names.add(item.name.trim().toLowerCase());
+    names.add(item.name.trim().split(' ')[0].toLowerCase());
+  });
+  return names;
+}
 function renderCalendarData(){
+  var clientNames=getClientNames();
   var events=calEvents.slice();
+  // סנן רק פגישות של לקוחות מהמאנדיי
+  if(clientNames.size>0){
+    events=events.filter(function(e){
+      var c=e.client.trim().toLowerCase();
+      return clientNames.has(c);
+    });
+  }
   if(calDuration>0){events=events.filter(function(e){return Math.abs(e.duration-calDuration)<=5;});}
   if(calClientFilter.trim()){
     var q=calClientFilter.trim().toLowerCase();
