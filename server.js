@@ -309,26 +309,24 @@ const server = http.createServer(async (req, res) => {
           const duration = (end - start) / 60000;
           if (!VALID_DURATIONS.includes(duration)) return false;
 
-          // פורמט עם מקף: "עינת - ליווי" / "עינת— ליווי"
-          // פורמט עם שעה: "עינת 08:15" (אחרי השם מגיע רווח + ספרה)
-          // פורמט שם בלבד: "עינת"
-          const afterFull = title.slice(fullName.length);
+          // חייב להיות פורמט "שם - ..." — הפורמט היחיד של פגישת לקוח
+          // ללא מקף = פגישה פנימית / אישית, לא ליווי
+          const hasDash = title.includes(' - ') || title.includes(' —') || /\w-\w/.test(title);
+          if (!hasDash) return false;
+
+          // קודם שם מלא — מדויק יותר (פתרון בעיית דניאל)
           const fullMatch =
             title.startsWith(fullName + ' -') ||
             title.startsWith(fullName + ' —') ||
-            title.startsWith(fullName + '-') ||
-            (title.startsWith(fullName + ' ') && /^\d/.test(afterFull.slice(1))) ||
-            title === fullName;
+            title.startsWith(fullName + '-');
 
           if (fullMatch) return true;
 
-          const afterFirst = title.slice(searchName.length);
+          // שם פרטי בלבד — רק אם שם מלא לא התאים
           const firstMatch =
             title.startsWith(searchName + ' -') ||
             title.startsWith(searchName + ' —') ||
-            title.startsWith(searchName + '-') ||
-            (title.startsWith(searchName + ' ') && /^\d/.test(afterFirst.slice(1))) ||
-            title === searchName;
+            title.startsWith(searchName + '-');
 
           return firstMatch;
         });
