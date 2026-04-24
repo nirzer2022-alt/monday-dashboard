@@ -165,9 +165,9 @@ function classifyEvent(event) {
   const knownDuration = duration===20 || duration===30 || duration===60 || duration===120;
   if (!knownDuration) return null;
 
-  // פגישות 120 דקות (STEP-UP) — פורמט שונה: "שם and ניר זד", בלי מקף — לא מסננים
+  // פגישות 120 דקות (STEP-UP) ו-20 דקות (ייעוץ מ-Calendly) — פורמט "שם and ניר זד", בלי מקף
   // פגישות אחרות — חייב מקף: "שם - סוג פגישה". ללא מקף = פגישה פנימית
-  if (duration !== 120) {
+  if (duration !== 120 && duration !== 20) {
     const hasDash = summary.includes(' - ') || summary.includes(' — ') || (summary.includes('-') && !summary.startsWith('-'));
     if (!hasDash) return null;
   }
