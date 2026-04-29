@@ -368,16 +368,18 @@ const server = http.createServer(async (req, res) => {
       // שלוף לידים + updates שלהם
       const leadsQuery = `{
         boards(ids: 9949694708) {
-          items_page(limit: 500) {
-            items {
-              id
-              name
-              created_at
-              column_values(ids: ["lead_status", "date_mm00ds06", "color_mkvd5y1g"]) { id text }
-              updates(limit: 20) {
+          groups(ids: ["topics", "group_mky8hb65"]) {
+            items_page(limit: 500) {
+              items {
                 id
-                body
+                name
                 created_at
+                column_values(ids: ["lead_status", "date_mm00ds06", "color_mkvd5y1g"]) { id text }
+                updates(limit: 20) {
+                  id
+                  body
+                  created_at
+                }
               }
             }
           }
@@ -385,7 +387,8 @@ const server = http.createServer(async (req, res) => {
       }`;
 
       const mondayRes = await fetchMonday(leadsQuery);
-      const items = mondayRes.data?.boards?.[0]?.items_page?.items || [];
+      const groups = mondayRes.data?.boards?.[0]?.groups || [];
+      const items = groups.flatMap(g => g.items_page?.items || []);
 
       const leads = items.map(item => {
         const gv = (col) => item.column_values?.find(c => c.id === col)?.text || '';
