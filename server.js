@@ -394,38 +394,36 @@ const server = http.createServer(async (req, res) => {
         const dateStr = gv('date_mm00ds06');
         const leadDate = dateStr ? new Date(dateStr) : new Date(item.created_at);
 
-        // חפש updates של שיחות (מכילים "Target is the Client" או "Caller is the Client")
+        // חפש updates של שיחות — פורמט אחיד:
+        // "שיחה נענתה" / "שיחה לא נענתה" + כיוון מ-Client Notes + משך זמן
         const callUpdates = (item.updates || []).filter(u =>
           u.body && (
-            u.body.includes('Target is the Client') ||
-            u.body.includes('Caller is the Client') ||
-            u.body.includes('ANSWER') ||
-            u.body.includes('CANCEL') ||
+            u.body.includes('שיחה נענתה') ||
+            u.body.includes('שיחה לא נענתה') ||
             u.body.includes('משך זמן')
           )
         );
 
-        // נתח את השיחה האחרונה
         let callStatus = 'לא טופל';
         let lastCallDate = null;
         let callCount = callUpdates.length;
 
         if (callUpdates.length > 0) {
-          // מיין לפי תאריך — האחרון ראשון
           callUpdates.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
           const last = callUpdates[0];
           lastCallDate = new Date(last.created_at).toLocaleDateString('he-IL');
           const body = last.body || '';
 
-          // זיהוי כיוון
-          const isOutgoing = body.includes('Target is the Client');
+          // סטטוס
+          const isAnswer = body.includes('שיחה נענתה');
+
+          // כיוון — מ-Client Notes
           const isIncoming = body.includes('Caller is the Client');
-          const isAnswer = body.includes('ANSWER');
-          const isCancel = body.includes('CANCEL') || !isAnswer;
+          const isOutgoing = !isIncoming;
 
           // חילוץ משך בדקות
           let durationMin = 0;
-          const durMatch = body.match(/משך זמן:\s*(\d+):(\d+)/);
+          const durMatch = body.match(/משך זמן[^\d]*(\d+):(\d+)/);
           if (durMatch) {
             durationMin = parseInt(durMatch[1]) + parseInt(durMatch[2]) / 60;
           }
@@ -433,11 +431,10 @@ const server = http.createServer(async (req, res) => {
           // לוגיקה
           if (isOutgoing && isAnswer && durationMin >= 3) callStatus = 'טופל';
           else if (isOutgoing && isAnswer && durationMin < 3) callStatus = 'לא רציני';
-          else if (isOutgoing && isCancel) callStatus = 'לא ענה';
+          else if (isOutgoing && !isAnswer) callStatus = 'לא ענה';
           else if (isIncoming && isAnswer && durationMin >= 3) callStatus = 'טופל';
           else if (isIncoming && isAnswer && durationMin < 3) callStatus = 'לא רציני';
-          else if (isIncoming && isCancel) callStatus = 'פספסנו';
-          else callStatus = 'לא ידוע';
+          else if (isIncoming && !isAnswer) callStatus = 'פספסנו';
         }
 
         return {
