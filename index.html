@@ -432,19 +432,61 @@ function cmp(){
 }
 
 async function commTab(){
-  document.getElementById('content').innerHTML='<div style="text-align:center;padding:30px;color:#6b7280">טוען נתוני תקשורת... עד 30 שניות</div>';
+  document.getElementById('content').innerHTML='<div style="text-align:center;padding:30px;color:#6b7280">טוען נתוני תקשורת...</div>';
   try{
-    const res=await fetch('/comm');const j=await res.json();
+    const res=await fetch('/comm');
+    const j=await res.json();
     if(!j.ok)throw new Error(j.error);
-    const st=j.stats;
-    document.getElementById('content').innerHTML=
-      '<div class="comm-stats">'+
-      '<div class="comm-card"><div class="comm-val c-blue">'+st.total+'</div><div class="comm-lbl">סה"כ שיחות</div></div>'+
-      '<div class="comm-card"><div class="comm-val c-green">'+st.answered+'</div><div class="comm-lbl">שיחות שנענו</div></div>'+
-      '<div class="comm-card"><div class="comm-val" style="color:var(--red)">'+st.missed+'</div><div class="comm-lbl">לא נענו</div></div>'+
-      '<div class="comm-card"><div class="comm-val c-amber">'+st.avgDuration+'</div><div class="comm-lbl">משך ממוצע</div></div>'+
+
+    const leads=j.leads||[];
+
+    // סטטיסטיקות
+    const total=leads.length;
+    const notHandled=leads.filter(l=>l.callStatus==='לא טופל').length;
+    const missed=leads.filter(l=>l.callStatus==='פספסנו').length;
+    const noAnswer=leads.filter(l=>l.callStatus==='לא ענה').length;
+    const notSerious=leads.filter(l=>l.callStatus==='לא רציני').length;
+    const handled=leads.filter(l=>l.callStatus==='טופל').length;
+
+    const statusColor={
+      'טופל':'background:#dcfce7;color:#15803d',
+      'לא רציני':'background:#fef3c7;color:#b45309',
+      'לא ענה':'background:#fee2e2;color:#dc2626',
+      'פספסנו':'background:#fee2e2;color:#dc2626',
+      'לא טופל':'background:#f3f4f6;color:#6b7280',
+      'לא ידוע':'background:#f3f4f6;color:#6b7280',
+    };
+
+    let html=
+      '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px">'+
+      '<div class="mc"><div class="mc-label">סה"כ לידים</div><div class="mc-value c-blue">'+total+'</div></div>'+
+      '<div class="mc"><div class="mc-label">לא טופל</div><div class="mc-value" style="color:#6b7280">'+notHandled+'</div></div>'+
+      '<div class="mc"><div class="mc-label">פספסנו</div><div class="mc-value" style="color:#dc2626">'+missed+'</div></div>'+
+      '<div class="mc"><div class="mc-label">לא ענה</div><div class="mc-value" style="color:#dc2626">'+noAnswer+'</div></div>'+
+      '<div class="mc"><div class="mc-label">טופל</div><div class="mc-value c-green">'+handled+'</div></div>'+
       '</div>'+
-      '<div class="card"><div class="card-title">פירוט לפי ליד</div>'+j.table+'</div>';
+      '<div class="card">'+
+      '<div class="card-title">מעקב טיפול בליד נכנס</div>'+
+      '<table><tr>'+
+      '<th>שם</th><th>תאריך פנייה</th><th>מקור</th><th style="text-align:center">שיחות</th>'+
+      '<th>שיחה אחרונה</th><th style="text-align:center">סטטוס</th>'+
+      '</tr>';
+
+    leads.forEach(function(l){
+      var sc=statusColor[l.callStatus]||'';
+      html+='<tr>'+
+        '<td style="font-weight:600">'+l.name+'</td>'+
+        '<td style="color:var(--text2)">'+l.leadDate+'</td>'+
+        '<td><span class="badge" style="background:#dbeafe;color:#1d4ed8">'+l.source+'</span></td>'+
+        '<td style="text-align:center;font-weight:700">'+l.callCount+'</td>'+
+        '<td style="color:var(--text2)">'+( l.lastCallDate||'—')+'</td>'+
+        '<td style="text-align:center"><span class="badge" style="'+sc+'">'+l.callStatus+'</span></td>'+
+        '</tr>';
+    });
+
+    html+='</table></div>';
+    document.getElementById('content').innerHTML=html;
+
   }catch(e){
     document.getElementById('content').innerHTML='<div class="err">'+e.message+'</div>';
   }
