@@ -362,14 +362,136 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // תיקון 4: stub ל-/comm — מונע החזרת HTML במקום JSON
+  // /comm — מעקב טיפול בלידים נכנסים
   if (req.url === '/comm') {
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({ ok: false, error: 'Voicenter לא מחובר עדיין' }));
+    try {
+      // שלוף לידים + updates שלהם
+      const leadsQuery = `{
+        boards(ids: 9949694708) {
+          items_page(limit: 500) {
+            items {
+              id
+              name
+              created_at
+              column_values(ids: ["lead_status", "date_mm00ds06", "color_mkvd5y1g"]) { id text }
+              updates(limit: 20) {
+                id
+                body
+                created_at
+              }
+            }
+          }
+        }
+      }`;
+
+      const mondayRes = await fetchMonday(leadsQuery);
+      const items = mondayRes.data?.boards?.[0]?.items_page?.items || [];
+
+      const leads = items.map(item => {
+        const gv = (col) => item.column_values?.find(c => c.id === col)?.text || '';
+        const status = gv('lead_status');
+        const source = gv('color_mkvd5y1g');
+        const dateStr = gv('date_mm00ds06');
+        const leadDate = dateStr ? new Date(dateStr) : new Date(item.created_at);
+
+        // חפש updates של שיחות (מכילים "Target is the Client" או "Caller is the Client")
+        const callUpdates = (item.updates || []).filter(u =>
+          u.body && (
+            u.body.includes('Target is the Client') ||
+            u.body.includes('Caller is the Client') ||
+            u.body.includes('ANSWER') ||
+            u.body.includes('CANCEL') ||
+            u.body.includes('משך זמן')
+          )
+        );
+
+        // נתח את השיחה האחרונה
+        let callStatus = 'לא טופל';
+        let lastCallDate = null;
+        let callCount = callUpdates.length;
+
+        if (callUpdates.length > 0) {
+          // מיין לפי תאריך — האחרון ראשון
+          callUpdates.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          const last = callUpdates[0];
+          lastCallDate = new Date(last.created_at).toLocaleDateString('he-IL');
+          const body = last.body || '';
+
+          // זיהוי כיוון
+          const isOutgoing = body.includes('Target is the Client');
+          const isIncoming = body.includes('Caller is the Client');
+          const isAnswer = body.includes('ANSWER');
+          const isCancel = body.includes('CANCEL') || !isAnswer;
+
+          // חילוץ משך בדקות
+          let durationMin = 0;
+          const durMatch = body.match(/משך זמן:\s*(\d+):(\d+)/);
+          if (durMatch) {
+            durationMin = parseInt(durMatch[1]) + parseInt(durMatch[2]) / 60;
+          }
+
+          // לוגיקה
+          if (isOutgoing && isAnswer && durationMin >= 3) callStatus = 'טופל';
+          else if (isOutgoing && isAnswer && durationMin < 3) callStatus = 'לא רציני';
+          else if (isOutgoing && isCancel) callStatus = 'לא ענה';
+          else if (isIncoming && isAnswer && durationMin >= 3) callStatus = 'טופל';
+          else if (isIncoming && isAnswer && durationMin < 3) callStatus = 'לא רציני';
+          else if (isIncoming && isCancel) callStatus = 'פספסנו';
+          else callStatus = 'לא ידוע';
+        }
+
+        return {
+          id: item.id,
+          name: item.name,
+          status,
+          source,
+          leadDate: leadDate.toLocaleDateString('he-IL'),
+          callCount,
+          callStatus,
+          lastCallDate,
+        };
+      });
+
+      // מיין: לא טופל ראשון, טופל אחרון
+      const order = { 'לא טופל': 0, 'פספסנו': 1, 'לא ענה': 2, 'לא רציני': 3, 'טופל': 4, 'לא ידוע': 5 };
+      leads.sort((a, b) => (order[a.callStatus] || 0) - (order[b.callStatus] || 0));
+
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: true, leads }));
+
+    } catch(e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: e.message }));
+    }
     return;
   }
 
   if (req.url === '/health') { res.writeHead(200); res.end('OK'); return; }
+
+  // route בדיקה זמני — שולף activity_logs של 3 לידים ראשונים
+  if (req.url === '/test-activity') {
+    try {
+      const q = `{
+        boards(ids: 9949694708) {
+          items_page(limit: 3) {
+            items {
+              id name
+              activity_logs(limit: 10) {
+                id event data created_at
+              }
+            }
+          }
+        }
+      }`;
+      const r = await fetchMonday(q);
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: true, data: r.data }, null, 2));
+    } catch(e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: e.message }));
+    }
+    return;
+  }
 
   try {
     const html = fs.readFileSync(path.join('/opt/render/project/src', 'index.html'), 'utf8');
