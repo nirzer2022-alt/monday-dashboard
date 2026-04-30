@@ -363,7 +363,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // /comm — מעקב טיפול בלידים נכנסים
-  if (req.url === '/comm') {
+  if (req.url?.startsWith('/comm')) {
     try {
       // שלוף לידים + updates שלהם
       const leadsQuery = `{
@@ -387,11 +387,19 @@ const server = http.createServer(async (req, res) => {
       }`;
 
       const mondayRes = await fetchMonday(leadsQuery);
+      const urlComm = new URL(req.url, 'http://localhost');
+      const days = parseInt(urlComm.searchParams.get('days') || '60');
+      const sinceDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
       const groups = mondayRes.data?.boards?.[0]?.groups || [];
       const items = groups.flatMap(g => g.items_page?.items || []);
 
-      const leads = items.map(item => {
+      const leadsRaw = items.map(item => {
         const gv = (col) => item.column_values?.find(c => c.id === col)?.text || '';
+        // סנן לפי תאריך פנייה
+        const dateStr = gv('date_mm00ds06');
+        const leadDate2 = dateStr ? new Date(dateStr) : new Date(item.created_at);
+        if (leadDate2 < sinceDate) return null;
         const status = gv('lead_status');
         const source = gv('color_mkvd5y1g');
         const dateStr = gv('date_mm00ds06');
@@ -452,6 +460,7 @@ const server = http.createServer(async (req, res) => {
         };
       });
 
+      const leads = leadsRaw.filter(l => l !== null);
       // מיין: לא טופל ראשון, טופל אחרון
       const order = { 'לא טופל': 0, 'פספסנו': 1, 'לא ענה': 2, 'לא רציני': 3, 'טופל': 4, 'לא ידוע': 5 };
       leads.sort((a, b) => (order[a.callStatus] || 0) - (order[b.callStatus] || 0));
