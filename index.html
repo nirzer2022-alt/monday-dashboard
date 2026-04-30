@@ -434,26 +434,8 @@ function cmp(){
 var commDays=60;
 async function commTab(days){
   if(days)commDays=days;
-  // עדכן כפתורים
-  [7,30,60,90].forEach(function(d){
-    var el=document.getElementById('commBtn'+d);
-    if(el){el.style.background=commDays===d?'#2563eb':'';el.style.color=commDays===d?'#fff':'';el.style.borderColor=commDays===d?'#2563eb':'';}
-  });
-  document.getElementById('content').innerHTML=
-    '<div style="display:flex;gap:6px;margin-bottom:16px">'+
-    '<button class="btn" id="commBtn7" onclick="commTab(7)">שבוע</button>'+
-    '<button class="btn" id="commBtn30" onclick="commTab(30)">30 יום</button>'+
-    '<button class="btn" id="commBtn60" onclick="commTab(60)">60 יום</button>'+
-    '<button class="btn" id="commBtn90" onclick="commTab(90)">90 יום</button>'+
-    '</div>'+
-    '<div style="text-align:center;padding:30px;color:#6b7280">טוען נתוני תקשורת...</div>';
-  // עדכן כפתורים שוב אחרי render
-  setTimeout(function(){
-    [7,30,60,90].forEach(function(d){
-      var el=document.getElementById('commBtn'+d);
-      if(el){el.style.background=commDays===d?'#2563eb':'';el.style.color=commDays===d?'#fff':'';el.style.borderColor=commDays===d?'#2563eb':'';}
-    });
-  },50);
+
+  document.getElementById('content').innerHTML='<div style="text-align:center;padding:30px;color:#6b7280">טוען נתוני תקשורת...</div>';
   try{
     const res=await fetch('/comm?days='+commDays);
     const j=await res.json();
@@ -478,7 +460,15 @@ async function commTab(days){
       'לא ידוע':'background:#f3f4f6;color:#6b7280',
     };
 
+    // כפתורי טווח + הדגשת הפעיל
+    const btnStyle=(d)=>commDays===d?'background:#2563eb;color:#fff;border-color:#2563eb':'';
     let html=
+      '<div style="display:flex;gap:6px;margin-bottom:16px">'+
+      '<button class="btn" style="'+btnStyle(7)+'" onclick="commTab(7)">שבוע</button>'+
+      '<button class="btn" style="'+btnStyle(30)+'" onclick="commTab(30)">30 יום</button>'+
+      '<button class="btn" style="'+btnStyle(60)+'" onclick="commTab(60)">60 יום</button>'+
+      '<button class="btn" style="'+btnStyle(90)+'" onclick="commTab(90)">90 יום</button>'+
+      '</div>'+
       '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px">'+
       '<div class="mc"><div class="mc-label">סה"כ לידים</div><div class="mc-value c-blue">'+total+'</div></div>'+
       '<div class="mc"><div class="mc-label">לא טופל</div><div class="mc-value" style="color:#6b7280">'+notHandled+'</div></div>'+
