@@ -398,12 +398,10 @@ const server = http.createServer(async (req, res) => {
         const gv = (col) => item.column_values?.find(c => c.id === col)?.text || '';
         // סנן לפי תאריך פנייה
         const dateStr = gv('date_mm00ds06');
-        const leadDate2 = dateStr ? new Date(dateStr) : new Date(item.created_at);
-        if (leadDate2 < sinceDate) return null;
+        const leadDate = dateStr ? new Date(dateStr) : new Date(item.created_at);
+        if (leadDate < sinceDate) return null;
         const status = gv('lead_status');
         const source = gv('color_mkvd5y1g');
-        const dateStr = gv('date_mm00ds06');
-        const leadDate = dateStr ? new Date(dateStr) : new Date(item.created_at);
 
         // חפש updates של שיחות — פורמט אחיד:
         // "שיחה נענתה" / "שיחה לא נענתה" + כיוון מ-Client Notes + משך זמן
