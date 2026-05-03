@@ -410,6 +410,7 @@ const server = http.createServer(async (req, res) => {
           u.body && (
             u.body.includes('שיחה נענתה') ||
             u.body.includes('שיחה לא נענתה') ||
+            u.body.includes('ניסיון שיחה') ||
             u.body.includes('משך זמן')
           )
         );
@@ -425,7 +426,8 @@ const server = http.createServer(async (req, res) => {
           const body = last.body || '';
 
           // סטטוס
-          const isAnswer = body.includes('שיחה נענתה');
+          // נענה = "שיחה נענתה". לא נענה = "שיחה לא נענתה" או "ניסיון שיחה"
+          const isAnswer = body.includes('שיחה נענתה') && !body.includes('שיחה לא נענתה');
 
           // כיוון — מ-Client Notes
           const isIncoming = body.includes('Caller is the Client');
