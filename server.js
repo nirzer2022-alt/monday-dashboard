@@ -374,7 +374,7 @@ const server = http.createServer(async (req, res) => {
                 id
                 name
                 created_at
-                column_values(ids: ["lead_status", "date_mm00ds06", "color_mkvd5y1g"]) { id text }
+                column_values(ids: ["lead_status", "date_mm00ds06", "color_mkvd5y1g", "lead_phone"]) { id text }
                 updates(limit: 20) {
                   id
                   body
@@ -402,6 +402,7 @@ const server = http.createServer(async (req, res) => {
         if (leadDate < sinceDate) return null;
         const status = gv('lead_status');
         const source = gv('color_mkvd5y1g');
+        const phone = gv('lead_phone');
 
         // חפש updates של שיחות — פורמט אחיד:
         // "שיחה נענתה" / "שיחה לא נענתה" + כיוון מ-Client Notes + משך זמן
@@ -452,6 +453,7 @@ const server = http.createServer(async (req, res) => {
           status,
           source,
           leadDate: leadDate.toLocaleDateString('he-IL'),
+          phone,
           callCount,
           callStatus,
           lastCallDate,
