@@ -479,7 +479,7 @@ async function commTab(days){
       '<div class="card">'+
       '<div class="card-title">מעקב טיפול בליד נכנס</div>'+
       '<table><tr>'+
-      '<th>שם</th><th>תאריך פנייה</th><th>מקור</th><th style="text-align:center">שיחות</th>'+
+      '<th>שם</th><th>טלפון</th><th>תאריך פנייה</th><th>מקור</th><th style="text-align:center">שיחות</th>'+
       '<th>שיחה אחרונה</th><th style="text-align:center">סטטוס</th>'+
       '</tr>';
 
@@ -487,6 +487,7 @@ async function commTab(days){
       var sc=statusColor[l.callStatus]||'';
       html+='<tr>'+
         '<td style="font-weight:600">'+l.name+'</td>'+
+        '<td style="color:var(--text2);direction:ltr;text-align:right">'+(l.phone||'—')+'</td>'+
         '<td style="color:var(--text2)">'+l.leadDate+'</td>'+
         '<td><span class="badge" style="background:#dbeafe;color:#1d4ed8">'+l.source+'</span></td>'+
         '<td style="text-align:center;font-weight:700">'+l.callCount+'</td>'+
@@ -648,7 +649,8 @@ function setCalRange(r){
     calTo=toISO(now);
   }
   var f=document.getElementById('calFrom');var t=document.getElementById('calTo');
-  if(f)f.value=calFrom;if(t)t.value=calTo;
+  if(f){f.value=calFrom;calFrom=f.value;}
+  if(t){t.value=calTo;calTo=t.value;}
   loadCalendar();
 }
 
