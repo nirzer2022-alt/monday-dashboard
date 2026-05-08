@@ -450,9 +450,11 @@ async function commTab(days){
     const noAnswer=leads.filter(l=>l.callStatus==='לא ענה').length;
     const notSerious=leads.filter(l=>l.callStatus==='לא רציני').length;
     const handled=leads.filter(l=>l.callStatus==='טופל').length;
+    const booked=leads.filter(l=>l.callStatus==='קבע פגישה').length;
 
     const statusColor={
       'טופל':'background:#dcfce7;color:#15803d',
+      'קבע פגישה':'background:#dbeafe;color:#1d4ed8',
       'לא רציני':'background:#fef3c7;color:#b45309',
       'לא ענה':'background:#fee2e2;color:#dc2626',
       'פספסנו':'background:#fee2e2;color:#dc2626',
@@ -469,11 +471,12 @@ async function commTab(days){
       '<button class="btn" style="'+btnStyle(60)+'" onclick="commTab(60)">60 יום</button>'+
       '<button class="btn" style="'+btnStyle(90)+'" onclick="commTab(90)">90 יום</button>'+
       '</div>'+
-      '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px">'+
+      '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px">'+
       '<div class="mc"><div class="mc-label">סה"כ לידים</div><div class="mc-value c-blue">'+total+'</div></div>'+
       '<div class="mc"><div class="mc-label">לא טופל</div><div class="mc-value" style="color:#6b7280">'+notHandled+'</div></div>'+
-      '<div class="mc"><div class="mc-label">פספסנו</div><div class="mc-value" style="color:#dc2626">'+missed+'</div></div>'+
+      '<div class="mc"><div class="mc-label">קבע פגישה</div><div class="mc-value c-blue">'+booked+'</div></div>'+
       '<div class="mc"><div class="mc-label">לא ענה</div><div class="mc-value" style="color:#dc2626">'+noAnswer+'</div></div>'+
+      '<div class="mc"><div class="mc-label">פספסנו</div><div class="mc-value" style="color:#dc2626">'+missed+'</div></div>'+
       '<div class="mc"><div class="mc-label">טופל</div><div class="mc-value c-green">'+handled+'</div></div>'+
       '</div>'+
       '<div class="card">'+
