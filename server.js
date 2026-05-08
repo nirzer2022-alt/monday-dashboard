@@ -1,674 +1,529 @@
-<!DOCTYPE html>
-<html lang="he" dir="rtl">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>לוח בקרה — ניר</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap');
-*{box-sizing:border-box;margin:0;padding:0;}
-:root{--bg:#f4f5f7;--bg2:#fff;--bg3:#eef0f3;--border:#e2e5ea;--text:#1a1d23;--text2:#6b7280;--text3:#9ca3af;--green:#16a34a;--green-bg:#dcfce7;--green-b:#bbf7d0;--blue:#2563eb;--blue-bg:#dbeafe;--blue-b:#bfdbfe;--amber:#d97706;--amber-bg:#fef3c7;--purple:#7c3aed;--purple-bg:#ede9fe;--red:#dc2626;--red-bg:#fee2e2;--red-b:#fecaca;}
-body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:20px 24px;}
-.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
-.header-title{font-size:22px;font-weight:700;}
-.header-sub{font-size:13px;color:var(--text2);margin-top:2px;}
-.header-right{display:flex;align-items:center;gap:10px;}
-.live-badge{display:flex;align-items:center;gap:5px;background:var(--green-bg);border:1px solid var(--green-b);border-radius:20px;padding:4px 10px;font-size:12px;color:var(--green);}
-.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
-.updated{font-size:12px;color:var(--text3);}
-.btn{background:var(--bg2);border:1px solid var(--border);color:var(--text2);padding:6px 14px;border-radius:8px;font-size:13px;cursor:pointer;font-family:'Heebo',sans-serif;}
-.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
-.tab{padding:7px 16px;border-radius:8px;font-size:13px;cursor:pointer;border:1px solid var(--border);color:var(--text2);background:var(--bg2);font-family:'Heebo',sans-serif;font-weight:500;}
-.tab.active{background:var(--blue);color:#fff;border-color:var(--blue);}
-.tab.cal-tab.active{background:#0891b2;border-color:#0891b2;}
-.date-range{display:inline-flex;align-items:center;gap:6px;background:var(--blue-bg);border:1px solid var(--blue-b);border-radius:8px;padding:5px 12px;font-size:12px;color:var(--blue);margin-bottom:16px;}
-.metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:14px;}
-.mc{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
-.mc-label{font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:500;}
-.mc-value{font-size:28px;font-weight:700;line-height:1;}
-.mc-sub{font-size:11px;margin-top:5px;font-weight:500;}
-.c-green{color:var(--green);}.c-blue{color:var(--blue);}.c-amber{color:var(--amber);}.c-purple{color:var(--purple);}.c-text2{color:var(--text2);}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
-.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;}
-.card-title{font-size:11px;color:var(--text2);margin-bottom:12px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;}
-.funnel{display:flex;flex-direction:column;gap:5px;}
-.funnel-step{border-radius:8px;padding:9px 13px;display:flex;justify-content:space-between;align-items:center;}
-.funnel-label{font-size:13px;font-weight:600;}
-.funnel-right{display:flex;align-items:center;gap:8px;}
-.funnel-num{font-size:16px;font-weight:700;}
-.funnel-pct{font-size:11px;opacity:.8;}
-.funnel-arr{font-size:9px;color:var(--text3);text-align:center;}
-.funnel-active{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:9px 13px;display:flex;justify-content:space-between;align-items:center;margin-top:2px;}
-table{width:100%;border-collapse:collapse;font-size:13px;}
-th{text-align:right;color:var(--text3);font-weight:500;padding:6px 4px;border-bottom:1px solid var(--border);font-size:11px;}
-td{padding:7px 4px;color:var(--text);border-bottom:1px solid var(--bg3);}
-tr:last-child td{border-bottom:none;}
-.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;}
-.src-bar-wrap{height:3px;background:var(--border);border-radius:2px;margin-top:4px;}
-.src-bar{height:100%;border-radius:2px;}
-.months-grid{display:grid;gap:10px;margin-bottom:12px;}
-.month-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
-.month-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
-.month-name{font-size:14px;font-weight:700;}
-.month-dates{font-size:11px;color:var(--text3);}
-.month-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center;}
-.month-metric-val{font-size:18px;font-weight:700;}
-.month-metric-lbl{font-size:10px;color:var(--text2);margin-top:1px;}
-.err{background:var(--red-bg);border:1px solid var(--red-b);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--red);margin-bottom:14px;}
-.comm-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:14px;}
-.comm-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-align:center;}
-.comm-val{font-size:24px;font-weight:700;}
-.comm-lbl{font-size:11px;color:var(--text2);margin-top:4px;}
-.cal-controls{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;}
-.cal-controls input[type=date]{border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;font-family:'Heebo',sans-serif;background:var(--bg2);color:var(--text);}
-.cal-search{border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;font-family:'Heebo',sans-serif;background:var(--bg2);color:var(--text);min-width:160px;direction:rtl;text-align:right;unicode-bidi:bidi-override;}
-.cal-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
-.cal-metric{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;text-align:center;}
-.cal-metric-val{font-size:28px;font-weight:700;}
-.cal-metric-lbl{font-size:12px;color:var(--text2);margin-top:4px;font-weight:500;}
-.cal-table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;}
-.type-ליווי{background:#dbeafe;color:#1d4ed8;}
-.type-step-up{background:#fee2e2;color:#dc2626;}
-.type-ייעוץ{background:#fef3c7;color:#b45309;}
-.type-שירות{background:#dcfce7;color:#15803d;}
-.type-אחר{background:var(--bg3);color:var(--text2);}
-.client-section{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:12px;}
-.client-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--bg3);}
-.client-row:last-child{border-bottom:none;}
-.client-name{font-weight:600;font-size:14px;}
-.client-stats{display:flex;gap:16px;}
-.client-stat{text-align:center;}
-.client-stat-val{font-weight:700;font-size:16px;}
-.client-stat-lbl{font-size:10px;color:var(--text3);}
-.custom-range{display:flex;gap:8px;align-items:center;margin-right:8px;}
-.custom-range input[type=date]{border:1px solid var(--border);border-radius:8px;padding:5px 8px;font-size:12px;font-family:'Heebo',sans-serif;background:var(--bg2);color:var(--text);}
-</style>
-</head>
-<body>
-<div id="app">
-  <div class="header">
-    <div>
-      <div class="header-title">לוח בקרה — ניר</div>
-      <div class="header-sub" id="sub" style="display:none"></div>
-    </div>
-    <div class="header-right">
-      <div class="live-badge"><div class="live-dot"></div>זמן אמת</div>
-      <span class="updated" id="upd"></span>
-      <button class="btn" onclick="reload()">⟳ רענן</button>
-    </div>
-  </div>
-  <div class="tabs" id="mainTabs">
-    <button class="tab active" onclick="go('today',this)">היום</button>
-    <button class="tab" onclick="go('week',this)">שבוע</button>
-    <button class="tab" onclick="go('month',this)">חודש זה</button>
-    <button class="tab" onclick="go('compare',this)">השוואת חודשים</button>
-    <button class="tab" id="customTab" onclick="go('custom',this)">📆 טווח מותאם</button>
-    <div class="custom-range" id="customRangeInputs" style="display:none">
-      <input type="date" id="cfrom" onchange="applyCustomIfReady()">
-      <span style="color:var(--text3);font-size:12px">עד</span>
-      <input type="date" id="cto" onchange="applyCustomIfReady()">
-      <button class="btn" style="background:var(--blue);color:#fff;border-color:var(--blue);padding:5px 10px;font-size:12px" onclick="applyCustom()">הצג</button>
-    </div>
-    <button class="tab" onclick="go('comm',this)">📞 תקשורת</button>
-    <button class="tab cal-tab" onclick="go('calendar',this)">📅 יומן פגישות</button>
-  </div>
-  <div class="tabs" id="calTabs" style="display:none">
-    <button class="tab cal-tab active" onclick="setCalRange(this.dataset.r)" data-r="today">היום</button>
-    <button class="tab cal-tab" onclick="setCalRange(this.dataset.r)" data-r="week">שבוע זה</button>
-    <button class="tab cal-tab" onclick="setCalRange(this.dataset.r)" data-r="month">חודש זה</button>
-    <button class="tab cal-tab" onclick="setCalRange(this.dataset.r)" data-r="year">מתחילת השנה</button>
-    <button class="tab" onclick="go('today',document.querySelector('#mainTabs .tab'))">← חזור לדשבורד</button>
-  </div>
-  <div class="date-range" id="dr" style="display:none"></div>
-  <div id="err" class="err" style="display:none"></div>
-  <div id="content"></div>
-</div>
-<script>
-const PROXY_URL='/data';
-const SRC=[
-  {key:'אתר',label:'אתר',color:'#2563eb',bg:'#dbeafe'},
-  {key:'דף נחיתה פיסגה',label:'פסגה',color:'#7c3aed',bg:'#ede9fe'},
-  {key:'voicenter',label:'Voicenter',color:'#d97706',bg:'#fef3c7'},
-  {key:'WhatsApp',label:'WhatsApp',color:'#16a34a',bg:'#dcfce7'},
-  {key:'Google',label:'Google',color:'#dc2626',bg:'#fee2e2'},
-  {key:'Calendly',label:'Calendly',color:'#0891b2',bg:'#cffafe'},
-];
-const ADV=['נקבעה שיחה','רלוונטי-העבר למכירות','פולאו-אפ','פגישת StepUp','נמכר ליווי'];
-const MO=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
-let range='today',data={},calEvents=[],calClientFilter='',calFrom='',calTo='',customFrom='',customTo='',calSortAsc=false,calDuration=0;
-let totalActiveCoaching=0;
-const fd=d=>d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();
-const toISO=d=>{const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return y+'-'+m+'-'+day;};
-const gv=(item,col)=>item.column_values?.find(c=>c.id===col)?.text||'';
-function getDate(item,col){if(col){const v=gv(item,col);if(v&&v.trim())return new Date(v);return null;}return item.created_at?new Date(item.created_at):null;}
-function filter(items,r,col){
-  const now=new Date();let s,e2;
-  if(r==='today'){s=new Date(now);s.setHours(0,0,0,0);}
-  else if(r==='week'){s=new Date(now);s.setDate(now.getDate()-now.getDay());s.setHours(0,0,0,0);}
-  else if(r==='month'){s=new Date(now.getFullYear(),now.getMonth(),1);}
-  else if(r==='custom'&&customFrom&&customTo){
-    s=new Date(customFrom);s.setHours(0,0,0,0);
-    e2=new Date(customTo);e2.setHours(23,59,59);
-    return items.filter(i=>{const d=getDate(i,col);return d&&d>=s&&d<=e2;});
-  }
-  else return [];
-  return items.filter(i=>{const d=getDate(i,col);return d&&d>=s;});
-}
-function label(r){
-  const n=new Date();
-  if(r==='today')return'היום · '+fd(n);
-  if(r==='week'){const s=new Date(n);s.setDate(n.getDate()-n.getDay());return fd(s)+' — '+fd(n);}
-  if(r==='month'){const s=new Date(n.getFullYear(),n.getMonth(),1);return MO[n.getMonth()]+' '+n.getFullYear()+' · '+fd(s)+' — '+fd(n);}
-  if(r==='compare')return'השוואה בין חודשים · '+n.getFullYear();
-  if(r==='comm')return'פעילות תקשורת Voicenter';
-  if(r==='calendar')return'יומן פגישות';
-  if(r==='custom'&&customFrom&&customTo){
-    var f=new Date(customFrom),t=new Date(customTo);
-    return fd(f)+' — '+fd(t);
-  }
-  return 'טווח מותאם';
-}
-function setDR(r){
-  const dr=document.getElementById('dr');
-  if(r==='calendar'||r==='comm'){dr.style.display='none';return;}
-  dr.style.display='inline-flex';
-  dr.textContent='📅 '+label(r);
-}
-async function load(){
-  document.getElementById('sub').textContent='טוען...';
-  try{
-    const res=await fetch(PROXY_URL);
-    const j=await res.json();
-    if(!j.ok)throw new Error(j.error);
-    data=j.data;
-    document.getElementById('err').style.display='none';
-    if(range!=='calendar')render();
-    document.getElementById('upd').textContent='עודכן '+new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
-  }catch(e){
-    document.getElementById('err').style.display='block';
-    document.getElementById('err').textContent='שגיאה: '+e.message;
-    document.getElementById('sub').textContent='שגיאה';
-  }
-}
-function reload(){
-  if(range==='calendar')loadCalendar();
-  else load();
-}
-function go(r,el){
-  document.querySelectorAll('#mainTabs .tab, #mainTabs button').forEach(t=>t.classList.remove('active'));
-  el.classList.add('active');
-  range=r;
-  setDR(r);
-  var customInputs=document.getElementById('customRangeInputs');
-  if(customInputs)customInputs.style.display=(r==='custom')?'flex':'none';
-  var mainTabs=document.getElementById('mainTabs');
-  var calTabs=document.getElementById('calTabs');
-  if(r==='calendar'){
-    if(mainTabs)mainTabs.style.display='none';
-    if(calTabs)calTabs.style.display='flex';
-    renderCalendarShell();loadCalendar();
-  } else {
-    if(mainTabs)mainTabs.style.display='flex';
-    if(calTabs)calTabs.style.display='none';
-    if(r==='custom'&&(!customFrom||!customTo)){
-      document.getElementById('content').innerHTML='<div class="card" style="padding:20px"><div class="card-title">בחר טווח תאריכים ולחץ הצג</div></div>';
-      return;
-    }
-    render();
-  }
-}
-function applyCustomIfReady(){
-  var f=document.getElementById('cfrom');
-  var t=document.getElementById('cto');
-  if(f&&t&&f.value&&t.value){
-    customFrom=f.value;customTo=t.value;
-  }
-}
-function applyCustom(){
-  var f=document.getElementById('cfrom');
-  var t=document.getElementById('cto');
-  if(!f||!t||!f.value||!t.value){
-    alert('בחר תאריך התחלה וסיום');return;
-  }
-  customFrom=f.value;customTo=t.value;
-  setDR('custom');
-  render();
+const http = require('http');
+const https = require('https');
+const fs = require('fs');
+const path = require('path');
+const MONDAY_TOKEN = process.env.MONDAY_TOKEN || '';
+const PORT = process.env.PORT || 3000;
+
+const CALENDAR_CREDS = process.env.GOOGLE_CREDENTIALS ? JSON.parse(process.env.GOOGLE_CREDENTIALS) : null;
+const CALENDAR_ID = process.env.CALENDAR_ID || 'nirzer2022@gmail.com';
+const CALENDAR_ID_STEPUP = '3fafd7868d8f30ef280cf29ecbd74ef79f75ba465c6c0b488145246726bae0e7@group.calendar.google.com';
+const CALENDAR_ID_CONSULT = '96776edd0002b6adf80277d291cc40ca40f5c49b0e37f390226ca1758fc4055a@group.calendar.google.com';
+
+// תיקון 1: הוספת date4 ל-stepup ו-date_mm00jx0c ל-sales
+const BOARDS = {
+  leads:    { id: 9949694708, cols: ['lead_status', 'color_mkvd5y1g', 'date_mm00ds06'] },
+  sales:    { id: 9949694887, cols: ['deal_stage', 'date_mm00jx0c'] },
+  stepup:   { id: 9950584665, cols: ['lead_status', 'date4'] },
+  coaching: { id: 9949694755, cols: ['status', 'numeric_mky8ze04'] },
+  sessions: { id: 9950821064, cols: ['status'] },
+};
+
+function mondayQuery(boardId, cols) {
+  const colsStr = cols.map(c => `"${c}"`).join(', ');
+  return `{ boards(ids: ${boardId}) { items_page(limit: 500) { items { name column_values(ids: [${colsStr}]) { id text } created_at } } } }`;
 }
 
-// ─── חישוב טווח לפי range ───────────────────────────────────────────────────
-function getRangeDates(r){
-  const now=new Date();
-  if(r==='today'){
-    const s=new Date(now);s.setHours(0,0,0,0);
-    const e=new Date(now);e.setHours(23,59,59);
-    return {from:toISO(s),to:toISO(e)};
-  }
-  if(r==='week'){
-    const s=new Date(now);s.setDate(now.getDate()-now.getDay());s.setHours(0,0,0,0);
-    return {from:toISO(s),to:toISO(now)};
-  }
-  if(r==='month'){
-    const s=new Date(now.getFullYear(),now.getMonth(),1);
-    return {from:toISO(s),to:toISO(now)};
-  }
-  if(r==='custom'&&customFrom&&customTo){
-    return {from:customFrom,to:customTo};
-  }
-  // ברירת מחדל: שנה אחורה
-  const s=new Date(now.getTime()-365*24*60*60*1000);
-  return {from:toISO(s),to:toISO(now)};
-}
-
-function render(){
-  document.getElementById('sub').textContent=label(range);
-  if(range==='compare'){cmp();return;}
-  if(range==='comm'){commTab();return;}
-  const L=filter(data.leads||[],range,'date_mm00ds06');
-  const S=filter(data.sales||[],range,'date_mm00jx0c');
-  const T=filter(data.stepup||[],range,'date4');
-  const C=data.coaching||[];
-  const contact=L.length;
-  const adv=L.filter(i=>ADV.includes(gv(i,'lead_status'))).length+S.filter(i=>['פגישת StepUp','נמכר ליווי','פולאו-אפ'].includes(gv(i,'deal_stage'))).length;
-  const su=T.length;
-  const sold=S.filter(i=>gv(i,'deal_stage')==='נמכר ליווי').length;
-  const c1=contact>0?Math.round(adv/contact*100):0;
-  const c2=adv>0?Math.round(su/adv*100):0;
-  const c3=su>0?Math.round(sold/su*100):0;
-  const sm={};SRC.forEach(s=>sm[s.key]={c:0,a:0,su:0,sold:0});
-  L.forEach(i=>{const s=gv(i,'color_mkvd5y1g');if(!sm[s])sm[s]={c:0,a:0,su:0,sold:0};sm[s].c++;if(ADV.includes(gv(i,'lead_status')))sm[s].a++;});
-
-  // טען coaching עם טווח תאריכים מדויק
-  const dates=getRangeDates(range);
-  const coachingUrl='/coaching?from='+dates.from+'&to='+dates.to;
-
-  document.getElementById('content').innerHTML=
-    '<div class="metrics">'+
-    '<div class="mc"><div class="mc-label">יצרו קשר</div><div class="mc-value c-blue">'+contact+'</div><div class="mc-sub c-text2">כניסות</div></div>'+
-    '<div class="mc"><div class="mc-label">שיחת ייעוץ</div><div class="mc-value c-green">'+adv+'</div><div class="mc-sub c-green">'+c1+'% המרה</div></div>'+
-    '<div class="mc"><div class="mc-label">פגישת STEP-UP</div><div class="mc-value c-amber">'+su+'</div><div class="mc-sub c-amber">'+c2+'% מהשיחות</div></div>'+
-    '<div class="mc"><div class="mc-label">רכישת ליווי</div><div class="mc-value c-purple">'+sold+'</div><div class="mc-sub c-purple">'+c3+'% מ-STEP-UP</div></div>'+
-    '<div class="mc"><div class="mc-label">פגישות ליווי</div><div class="mc-value c-text2" id="metricDone">...</div><div class="mc-sub c-text2">בוצעו בטווח</div></div>'+
-    '</div>'+
-    '<div class="row2">'+
-    '<div class="card"><div class="card-title">משפך המרה</div>'+funnel(contact,adv,su,sold)+'</div>'+
-    '<div class="card"><div class="card-title">פירוט מקורות</div>'+srcTable(sm,contact)+'</div>'+
-    '</div>'+
-    '<div class="card" style="margin-bottom:12px"><div class="card-title">ליוויים פעילים</div>'+coach(coachingUrl)+'</div>';
-}
-
-function funnel(contact,adv,su,sold){
-  const steps=[
-    {n:'יצרו קשר',v:contact,bg:'#dbeafe',t:'#1d4ed8',w:100},
-    {n:'שיחת ייעוץ',v:adv,bg:'#dcfce7',t:'#15803d',w:82},
-    {n:'פגישת STEP-UP',v:su,bg:'#fef3c7',t:'#b45309',w:66},
-    {n:'רכישת ליווי',v:sold,bg:'#ede9fe',t:'#6d28d9',w:46},
-  ];
-  let h='<div class="funnel">';
-  steps.forEach(function(s,i){
-    const p=contact>0?Math.round(s.v/contact*100):0;
-    const cv=i>0&&steps[i-1].v>0?' · '+Math.round(s.v/steps[i-1].v*100)+'% מהשלב הקודם':'';
-    if(i>0)h+='<div class="funnel-arr">▼</div>';
-    h+='<div class="funnel-step" style="background:'+s.bg+';width:'+s.w+'%">'+
-       '<span class="funnel-label" style="color:'+s.t+'">'+s.n+'</span>'+
-       '<span class="funnel-right">'+
-       '<span class="funnel-num" style="color:'+s.t+'">'+s.v+'</span>'+
-       '<span class="funnel-pct" style="color:'+s.t+'">'+p+'%'+cv+'</span>'+
-       '</span></div>';
-  });
-  h+='<div class="funnel-arr">▼</div>';
-  h+='<div class="funnel-active">'+
-     '<span class="funnel-label" style="color:#15803d">ליוויים פעילים כעת</span>'+
-     '<span class="funnel-right">'+
-     '<span class="funnel-num c-green" id="funnelActiveCount">...</span>'+
-     '</span></div>';
-  h+='</div>';
-  return h;
-}
-
-function srcTable(sm,total){
-  let rows='';
-  SRC.forEach(function(s){
-    const d=sm[s.key]||{c:0,a:0,su:0,sold:0};
-    const pt=total>0?Math.round(d.c/total*100):0;
-    const pa=d.c>0?Math.round(d.a/d.c*100):0;
-    const ps=d.a>0?Math.round(d.su/d.a*100):0;
-    const pl=d.su>0?Math.round(d.sold/d.su*100):0;
-    const cv=d.c>0?Math.round(d.sold/d.c*100):0;
-    const cc=cv>=30?'color:#16a34a;background:#dcfce7':cv>=15?'color:#d97706;background:#fef3c7':'color:#dc2626;background:#fee2e2';
-    rows+='<tr>'+
-      '<td><span class="badge" style="background:'+s.bg+';color:'+s.color+'">'+s.label+'</span>'+
-      '<div class="src-bar-wrap" style="width:80px;margin-top:3px"><div class="src-bar" style="width:'+pt+'%;background:'+s.color+'"></div></div></td>'+
-      '<td style="text-align:center;font-weight:600">'+d.c+'<div style="font-size:10px;color:#9ca3af">'+pt+'%</div></td>'+
-      '<td style="text-align:center">'+d.a+'<div style="font-size:10px;color:#9ca3af">'+pa+'%</div></td>'+
-      '<td style="text-align:center">'+d.su+'<div style="font-size:10px;color:#9ca3af">'+ps+'%</div></td>'+
-      '<td style="text-align:center;font-weight:700">'+d.sold+'<div style="font-size:10px;color:#9ca3af">'+pl+'%</div></td>'+
-      '<td style="text-align:center"><span class="badge" style="'+cc+'">'+cv+'%</span></td>'+
-      '</tr>';
-  });
-  return '<table><tr><th>מקור</th><th style="text-align:center">קשר</th><th style="text-align:center">ייעוץ</th><th style="text-align:center">STEP-UP</th><th style="text-align:center">ליווי</th><th style="text-align:center">המרה</th></tr>'+rows+'</table>';
-}
-
-// תיקון: coach מקבל url עם טווח ומעדכן גם metricDone ו-funnelActiveCount
-function coach(coachingUrl){
-  fetch(coachingUrl).then(function(r){return r.json();}).then(function(j){
-    var el=document.getElementById('coachingDiv');
-    if(!el)return;
-    // עדכן מטריקה עליונה
-    var metricDone=document.getElementById('metricDone');
-    if(metricDone&&j.ok)metricDone.textContent=j.doneTotal||0;
-    // עדכן מספר פעילים במשפך
-    var funnelEl=document.getElementById('funnelActiveCount');
-    if(funnelEl&&j.ok)funnelEl.textContent=j.totalActive||0;
-    // עדכן totalActiveCoaching גלובלי
-    if(j.ok)totalActiveCoaching=j.totalActive;
-
-    if(!j.ok){el.innerHTML='<div style="color:#dc2626;font-size:13px">שגיאה: '+j.error+'</div>';return;}
-    if(!j.clients||!j.clients.length){el.innerHTML='<div style="color:#9ca3af;font-size:13px;text-align:center;padding:16px 0">אין ליוויים פעילים</div>';return;}
-    var h='<table style="width:100%"><tr>'+
-      '<th style="text-align:right;color:var(--text3);font-size:11px;padding:6px 8px;border-bottom:1px solid var(--border)">שם</th>'+
-      '<th style="text-align:center;color:var(--text3);font-size:11px;padding:6px 8px;border-bottom:1px solid var(--border)">נרכשו</th>'+
-      '<th style="text-align:center;color:var(--text3);font-size:11px;padding:6px 8px;border-bottom:1px solid var(--border)">בוצעו</th>'+
-      '<th style="text-align:center;color:var(--text3);font-size:11px;padding:6px 8px;border-bottom:1px solid var(--border)">יתרה</th>'+
-      '<th style="text-align:right;color:var(--text3);font-size:11px;padding:6px 8px;border-bottom:1px solid var(--border)">התקדמות</th>'+
-      '</tr>';
-    j.clients.forEach(function(c){
-      var remaining=c.remaining!==null?c.remaining:'?';
-      var purchased=c.purchased||0;
-      var pct=purchased>0?Math.min(100,Math.round(c.done/purchased*100)):0;
-      var barColor=c.alert?'#dc2626':pct>=75?'#d97706':'#16a34a';
-      var remColor=c.alert?'color:#dc2626;font-weight:700':'color:#16a34a;font-weight:600';
-      var rowBg=c.alert?'background:#fff5f5':'';
-      h+='<tr style="'+rowBg+';border-bottom:1px solid var(--bg3)">'+
-        '<td style="padding:10px 8px;font-weight:600;font-size:13px">'+(c.alert?'⚠️ ':'')+c.name+'</td>'+
-        '<td style="text-align:center;padding:10px 8px;font-size:13px;color:var(--text2)">'+(purchased||'?')+'</td>'+
-        '<td style="text-align:center;padding:10px 8px;font-size:14px;font-weight:700;color:#2563eb">'+c.done+'</td>'+
-        '<td style="text-align:center;padding:10px 8px;font-size:13px;'+remColor+'">'+remaining+'</td>'+
-        '<td style="padding:10px 8px;min-width:100px">'+
-        '<div style="height:6px;background:var(--bg3);border-radius:3px">'+
-        '<div style="height:100%;width:'+pct+'%;background:'+barColor+';border-radius:3px"></div>'+
-        '</div>'+
-        '<div style="font-size:10px;color:var(--text3);margin-top:2px">'+pct+'%</div>'+
-        '</td>'+
-        '</tr>';
-    });
-    h+='</table>';
-    el.innerHTML=h;
-  }).catch(function(e){
-    var el=document.getElementById('coachingDiv');
-    if(el)el.innerHTML='<div style="color:#dc2626;font-size:13px">שגיאת רשת: '+e.message+'</div>';
-  });
-  return '<div id="coachingDiv" style="color:#9ca3af;font-size:13px;text-align:center;padding:8px">טוען ליוויים...</div>';
-}
-
-function cmp(){
-  const now=new Date();const md=[];
-  for(let m=0;m<=now.getMonth();m++){
-    const s=new Date(now.getFullYear(),m,1),e=new Date(now.getFullYear(),m+1,0,23,59,59);
-    function inM(arr,col){return arr.filter(function(i){const d=col?new Date(gv(i,col)||''):new Date(i.created_at||'');if(isNaN(d))return false;return d>=s&&d<=e;});}
-    const L=inM(data.leads||[],'date_mm00ds06'),S=inM(data.sales||[],'date_mm00jx0c'),T=inM(data.stepup||[],'date4');
-    const c=L.length,a=L.filter(function(i){return ADV.includes(gv(i,'lead_status'));}).length,su=T.length;
-    const sold=S.filter(function(i){return gv(i,'deal_stage')==='נמכר ליווי';}).length;
-    if(c>0||m===now.getMonth())md.push({m:m,name:MO[m],s:s,e:e,c:c,a:a,su:su,sold:sold});
-  }
-  const mx=Math.max.apply(null,md.map(function(d){return d.c;}));const mx2=mx||1;
-  const cols=Math.min(md.length,3);
-  let h='<div class="months-grid" style="grid-template-columns:repeat('+cols+',1fr)">';
-  md.forEach(function(d){
-    const cv=d.c>0?Math.round(d.sold/d.c*100):0,bw=Math.round(d.c/mx2*100);
-    const ed=d.m===now.getMonth()?fd(now):fd(d.e);
-    h+='<div class="month-card">'+
-      '<div class="month-header"><span class="month-name">'+d.name+'</span><span class="month-dates">'+fd(d.s)+' — '+ed+'</span></div>'+
-      '<div class="month-metrics">'+
-      '<div><div class="month-metric-val c-blue">'+d.c+'</div><div class="month-metric-lbl">קשר</div></div>'+
-      '<div><div class="month-metric-val c-green">'+d.a+'</div><div class="month-metric-lbl">ייעוץ</div></div>'+
-      '<div><div class="month-metric-val c-amber">'+d.su+'</div><div class="month-metric-lbl">STEP-UP</div></div>'+
-      '<div><div class="month-metric-val c-purple">'+d.sold+' <span style="font-size:11px">'+cv+'%</span></div><div class="month-metric-lbl">ליווי</div></div>'+
-      '</div>'+
-      '<div class="src-bar-wrap" style="margin-top:8px"><div class="src-bar" style="width:'+bw+'%;background:#2563eb"></div></div>'+
-      '</div>';
-  });
-  document.getElementById('content').innerHTML=h+'</div>';
-}
-
-var commDays=60;
-async function commTab(days){
-  if(days)commDays=days;
-
-  document.getElementById('content').innerHTML='<div style="text-align:center;padding:30px;color:#6b7280">טוען נתוני תקשורת...</div>';
-  try{
-    const res=await fetch('/comm?days='+commDays);
-    const j=await res.json();
-    if(!j.ok)throw new Error(j.error);
-
-    const leads=j.leads||[];
-
-    // סטטיסטיקות
-    const total=leads.length;
-    const notHandled=leads.filter(l=>l.callStatus==='לא טופל').length;
-    const missed=leads.filter(l=>l.callStatus==='פספסנו').length;
-    const noAnswer=leads.filter(l=>l.callStatus==='לא ענה').length;
-    const notSerious=leads.filter(l=>l.callStatus==='לא רציני').length;
-    const handled=leads.filter(l=>l.callStatus==='טופל').length;
-    const booked=leads.filter(l=>l.callStatus==='קבע פגישה').length;
-
-    const statusColor={
-      'טופל':'background:#dcfce7;color:#15803d',
-      'קבע פגישה':'background:#dbeafe;color:#1d4ed8',
-      'לא רציני':'background:#fef3c7;color:#b45309',
-      'לא ענה':'background:#fee2e2;color:#dc2626',
-      'פספסנו':'background:#fee2e2;color:#dc2626',
-      'לא טופל':'background:#f3f4f6;color:#6b7280',
-      'לא ידוע':'background:#f3f4f6;color:#6b7280',
+function fetchMonday(query) {
+  return new Promise((resolve, reject) => {
+    const data = JSON.stringify({ query });
+    const options = {
+      hostname: 'api.monday.com',
+      path: '/v2/',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': MONDAY_TOKEN,
+        'Content-Length': Buffer.byteLength(data),
+      }
     };
-
-    // כפתורי טווח + הדגשת הפעיל
-    const btnStyle=(d)=>commDays===d?'background:#2563eb;color:#fff;border-color:#2563eb':'';
-    let html=
-      '<div style="display:flex;gap:6px;margin-bottom:16px">'+
-      '<button class="btn" style="'+btnStyle(7)+'" onclick="commTab(7)">שבוע</button>'+
-      '<button class="btn" style="'+btnStyle(30)+'" onclick="commTab(30)">30 יום</button>'+
-      '<button class="btn" style="'+btnStyle(60)+'" onclick="commTab(60)">60 יום</button>'+
-      '<button class="btn" style="'+btnStyle(90)+'" onclick="commTab(90)">90 יום</button>'+
-      '</div>'+
-      '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px">'+
-      '<div class="mc"><div class="mc-label">סה"כ לידים</div><div class="mc-value c-blue">'+total+'</div></div>'+
-      '<div class="mc"><div class="mc-label">לא טופל</div><div class="mc-value" style="color:#6b7280">'+notHandled+'</div></div>'+
-      '<div class="mc"><div class="mc-label">קבע פגישה</div><div class="mc-value c-blue">'+booked+'</div></div>'+
-      '<div class="mc"><div class="mc-label">לא ענה</div><div class="mc-value" style="color:#dc2626">'+noAnswer+'</div></div>'+
-      '<div class="mc"><div class="mc-label">פספסנו</div><div class="mc-value" style="color:#dc2626">'+missed+'</div></div>'+
-      '<div class="mc"><div class="mc-label">טופל</div><div class="mc-value c-green">'+handled+'</div></div>'+
-      '</div>'+
-      '<div class="card">'+
-      '<div class="card-title">מעקב טיפול בליד נכנס</div>'+
-      '<table><tr>'+
-      '<th>שם</th><th>טלפון</th><th>תאריך פנייה</th><th>מקור</th><th style="text-align:center">שיחות</th>'+
-      '<th>שיחה אחרונה</th><th style="text-align:center">סטטוס</th>'+
-      '</tr>';
-
-    leads.forEach(function(l){
-      var sc=statusColor[l.callStatus]||'';
-      html+='<tr>'+
-        '<td style="font-weight:600">'+l.name+'</td>'+
-        '<td style="color:var(--text2);direction:ltr;text-align:right">'+(l.phone||'—')+'</td>'+
-        '<td style="color:var(--text2)">'+l.leadDate+'</td>'+
-        '<td><span class="badge" style="background:#dbeafe;color:#1d4ed8">'+l.source+'</span></td>'+
-        '<td style="text-align:center;font-weight:700">'+l.callCount+'</td>'+
-        '<td style="color:var(--text2)">'+( l.lastCallDate||'—')+'</td>'+
-        '<td style="text-align:center"><span class="badge" style="'+sc+'">'+l.callStatus+'</span></td>'+
-        '</tr>';
+    const req = https.request(options, res => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        try { resolve(JSON.parse(body)); }
+        catch(e) { reject(e); }
+      });
     });
-
-    html+='</table></div>';
-    document.getElementById('content').innerHTML=html;
-
-  }catch(e){
-    document.getElementById('content').innerHTML='<div class="err">'+e.message+'</div>';
-  }
-}
-
-function renderCalendarShell(){
-  document.getElementById('sub').textContent='יומן פגישות';
-  const now=new Date();
-  if(!calFrom)calFrom=toISO(new Date(now.getFullYear(),0,1));
-  if(!calTo){var fut=new Date(now);fut.setMonth(fut.getMonth()+3);calTo=toISO(fut);}
-  document.getElementById('content').innerHTML=
-    '<div class="cal-controls">'+
-    '<input type="date" id="calFrom" value="'+calFrom+'" onchange="calFrom=this.value">'+
-    '<span style="color:var(--text3)">עד</span>'+
-    '<input type="date" id="calTo" value="'+calTo+'" onchange="calTo=this.value">'+
-    '<button class="btn" style="background:#0891b2;color:#fff;border-color:#0891b2" onclick="loadCalendar()">טען</button>'+
-    '</div>'+
-    '<div style="display:flex;gap:6px;align-items:center;margin-bottom:12px;flex-wrap:wrap">'+
-    '<input type="search" id="calSearch" class="cal-search" placeholder="חיפוש לקוח...">'+
-    '<span style="color:var(--text3);font-size:12px">סנן:</span>'+
-    '<button class="btn" id="durAll" onclick="calDuration=0;renderCalendarData()">הכל</button>'+
-    '<button class="btn" id="dur20" onclick="calDuration=20;renderCalendarData()">ייעוץ</button>'+
-    '<button class="btn" id="dur30" onclick="calDuration=30;renderCalendarData()">שירות</button>'+
-    '<button class="btn" id="dur60" onclick="calDuration=60;renderCalendarData()">ליווי</button>'+
-    '<button class="btn" id="dur120" onclick="calDuration=120;renderCalendarData()">STEP-UP</button>'+
-    '</div>'+
-    '<div id="calData" style="text-align:center;padding:30px;color:#6b7280">טוען נתוני יומן...</div>';
-  document.getElementById('calSearch').addEventListener('input',function(){calClientFilter=this.value;renderCalendarData();});
-}
-
-async function loadCalendar(){
-  var fromEl=document.getElementById('calFrom');
-  var toEl=document.getElementById('calTo');
-  if(fromEl)calFrom=fromEl.value;
-  if(toEl)calTo=toEl.value;
-  var dataDiv=document.getElementById('calData');
-  if(dataDiv){dataDiv.innerHTML='<div style="text-align:center;padding:30px;color:#6b7280">טוען נתוני יומן...</div>';}
-  try{
-    const res=await fetch('/calendar?from='+calFrom+'&to='+calTo);
-    const j=await res.json();
-    if(!j.ok)throw new Error(j.error);
-    calEvents=j.events;
-    renderCalendarData();
-  }catch(e){
-    var d2=document.getElementById('calData');
-    if(d2)d2.innerHTML='<div class="err">שגיאה: '+e.message+'</div>';
-  }
-}
-
-function getClientNames(){
-  // בונה Set של שמות לקוחות מהמאנדיי (שם מלא + שם פרטי)
-  // מכל הבורדים הרלוונטיים: coaching (ליווי) + stepup
-  var names=new Set();
-  var allClients=[].concat(data.coaching||[]).concat(data.stepup||[]).concat(data.sales||[]);
-  allClients.forEach(function(item){
-    if(!item.name)return;
-    names.add(item.name.trim().toLowerCase());
-    names.add(item.name.trim().split(' ')[0].toLowerCase());
+    req.on('error', reject);
+    req.write(data);
+    req.end();
   });
-  return names;
 }
-function renderCalendarData(){
-  var clientNames=getClientNames();
-  var events=calEvents.slice();
-  // סנן רק פגישות של לקוחות מהמאנדיי
-  if(clientNames.size>0){
-    events=events.filter(function(e){
-      var c=e.client.trim().toLowerCase();
-      return clientNames.has(c);
+
+async function getAllData() {
+  const results = await Promise.all(
+    Object.entries(BOARDS).map(async ([key, b]) => {
+      const res = await fetchMonday(mondayQuery(b.id, b.cols));
+      return [key, res.data?.boards?.[0]?.items_page?.items || []];
+    })
+  );
+  return Object.fromEntries(results);
+}
+
+function base64url(str) {
+  return Buffer.from(str).toString('base64')
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+function signJWT(payload, privateKey) {
+  const crypto = require('crypto');
+  const header = base64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+  const body = base64url(JSON.stringify(payload));
+  const unsigned = `${header}.${body}`;
+  const sign = crypto.createSign('RSA-SHA256');
+  sign.update(unsigned);
+  const sig = sign.sign(privateKey, 'base64')
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  return `${unsigned}.${sig}`;
+}
+
+async function getGoogleToken(creds) {
+  const now = Math.floor(Date.now() / 1000);
+  const jwt = signJWT({
+    iss: creds.client_email,
+    scope: 'https://www.googleapis.com/auth/calendar.readonly',
+    aud: 'https://oauth2.googleapis.com/token',
+    exp: now + 3600,
+    iat: now,
+  }, creds.private_key);
+
+  return new Promise((resolve, reject) => {
+    const body = `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`;
+    const options = {
+      hostname: 'oauth2.googleapis.com',
+      path: '/token',
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(body) }
+    };
+    const req = https.request(options, res => {
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => {
+        try { const j = JSON.parse(data); resolve(j.access_token); }
+        catch(e) { reject(e); }
+      });
     });
-  }
-  if(calDuration>0){events=events.filter(function(e){return Math.abs(e.duration-calDuration)<=5;});}
-  if(calClientFilter.trim()){
-    var q=calClientFilter.trim().toLowerCase();
-    events=events.filter(function(e){return e.client.toLowerCase().includes(q);});
-  }
-  var byType={ליווי:0,'step-up':0,ייעוץ:0,שירות:0};
-  events.forEach(function(e){if(byType[e.type]!==undefined)byType[e.type]++;});
-  var clients={};
-  events.forEach(function(e){
-    if(e.type==='ליווי'||e.type==='step-up'){
-      if(!clients[e.client])clients[e.client]={ליווי:0,'step-up':0,last:''};
-      clients[e.client][e.type]++;
-      if(!clients[e.client].last||e.start>clients[e.client].last)clients[e.client].last=e.start;
-    }
+    req.on('error', reject);
+    req.write(body);
+    req.end();
   });
-  var clientList=Object.entries(clients).sort(function(a,b){return b[1].ליווי-a[1].ליווי;});
-  ['durAll','dur20','dur30','dur60','dur120'].forEach(function(id,i){
-    var el=document.getElementById(id);
-    var vals=[0,20,30,60,120];
-    if(el){el.style.background=calDuration===vals[i]?'#0891b2':'';el.style.color=calDuration===vals[i]?'#fff':'';el.style.borderColor=calDuration===vals[i]?'#0891b2':'';}
+}
+
+async function fetchCalendarEvents(token, calendarId, timeMin, timeMax) {
+  const params = new URLSearchParams({
+    timeMin: timeMin.toISOString(),
+    timeMax: timeMax.toISOString(),
+    singleEvents: 'true',
+    orderBy: 'startTime',
+    maxResults: '2500',
   });
-  var html='<div class="cal-metrics">'+
-    '<div class="cal-metric"><div class="cal-metric-val c-blue">'+byType['ליווי']+'</div><div class="cal-metric-lbl">פגישות ליווי</div></div>'+
-    '<div class="cal-metric"><div class="cal-metric-val" style="color:#dc2626">'+byType['step-up']+'</div><div class="cal-metric-lbl">פגישות STEP-UP</div></div>'+
-    '<div class="cal-metric"><div class="cal-metric-val c-amber">'+byType['ייעוץ']+'</div><div class="cal-metric-lbl">שיחות ייעוץ</div></div>'+
-    '<div class="cal-metric"><div class="cal-metric-val c-green">'+byType['שירות']+'</div><div class="cal-metric-lbl">שיחות שירות</div></div>'+
-    '</div>';
-  if(clientList.length){
-    html+='<div class="client-section"><div class="card-title" style="margin-bottom:8px">מעקב לקוחות ליווי</div>';
-    clientList.forEach(function(entry){
-      var name=entry[0],d=entry[1];
-      var last=d.last?new Date(d.last).toLocaleDateString('he-IL'):'';
-      html+='<div class="client-row">'+
-        '<span class="client-name">'+name+'</span>'+
-        '<div class="client-stats">'+
-        '<div class="client-stat"><div class="client-stat-val c-blue">'+d['ליווי']+'</div><div class="client-stat-lbl">ליווי</div></div>'+
-        (d['step-up']>0?'<div class="client-stat"><div class="client-stat-val" style="color:#dc2626">'+d['step-up']+'</div><div class="client-stat-lbl">STEP-UP</div></div>':'')+
-        '<div class="client-stat"><div class="client-stat-val" style="font-size:12px;color:var(--text2)">'+last+'</div><div class="client-stat-lbl">אחרונה</div></div>'+
-        '</div></div>';
+  const encodedId = encodeURIComponent(calendarId);
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'www.googleapis.com',
+      path: `/calendar/v3/calendars/${encodedId}/events?${params}`,
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${token}` }
+    };
+    const req = https.request(options, res => {
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => {
+        try { resolve(JSON.parse(data)); }
+        catch(e) { reject(e); }
+      });
     });
-    html+='</div>';
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+async function fetchAllCalendarEvents(token, calendarId, timeMin, timeMax) {
+  const allItems = [];
+  let current = new Date(timeMin);
+  while (current < timeMax) {
+    const chunkEnd = new Date(Math.min(
+      current.getTime() + 90 * 24 * 60 * 60 * 1000,
+      timeMax.getTime()
+    ));
+    const result = await fetchCalendarEvents(token, calendarId, current, chunkEnd);
+    allItems.push(...(result.items || []));
+    current = new Date(chunkEnd);
   }
-  html+='<div class="cal-table-wrap"><div class="card-title" style="margin-bottom:12px">כל הפגישות ('+events.length+')</div>'+
-    '<table><tr><th style="cursor:pointer;user-select:none" onclick="calSortAsc=!calSortAsc;renderCalendarData()">תאריך '+(calSortAsc?'↑':'↓')+'</th><th>לקוח</th><th>אירוע</th><th style="text-align:center">סוג</th><th style="text-align:center">משך</th></tr>';
-  if(!events.length){
-    html+='<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px">אין תוצאות</td></tr>';
+  return { items: allItems };
+}
+
+function classifyEvent(event) {
+  const start = new Date(event.start?.dateTime || event.start?.date);
+  const end = new Date(event.end?.dateTime || event.end?.date);
+  const duration = (end - start) / 60000;
+  const summary = event.summary || '';
+  const summaryLower = summary.toLowerCase();
+
+  if (!event.start?.dateTime) return null;
+  const knownDuration = duration===20 || duration===30 || duration===60 || duration===120;
+  if (!knownDuration) return null;
+
+  // פגישות 120 דקות (STEP-UP) ו-20 דקות (ייעוץ מ-Calendly) — פורמט "שם and ניר זד", בלי מקף
+  // פגישות אחרות — חייב מקף: "שם - סוג פגישה". ללא מקף = פגישה פנימית
+  if (duration !== 120 && duration !== 20) {
+    const hasDash = summary.includes(' - ') || summary.includes(' — ') || (summary.includes('-') && !summary.startsWith('-'));
+    if (!hasDash) return null;
+  }
+
+  let type = 'אחר';
+  if (duration===120) type = 'step-up';
+  else if (duration===60) type = 'ליווי';
+  else if (duration===30) type = 'שירות';
+  else if (duration===20) type = 'ייעוץ';
+
+  const isZoom = summaryLower.includes('זום') || summaryLower.includes('zoom');
+
+  const dashIdx = summary.indexOf(' - ');
+  const longDashIdx = summary.indexOf(' — ');
+  let namePart;
+  if(dashIdx > 0) {
+    namePart = summary.slice(0, dashIdx).trim();
+  } else if(longDashIdx > 0) {
+    namePart = summary.slice(0, longDashIdx).trim();
   } else {
-    events.sort(function(a,b){return calSortAsc?new Date(a.start)-new Date(b.start):new Date(b.start)-new Date(a.start);}).forEach(function(e){
-      html+='<tr>'+
-        '<td>'+new Date(e.start).toLocaleDateString('he-IL')+'</td>'+
-        '<td style="font-weight:600">'+e.client+'</td>'+
-        '<td style="color:var(--text2);font-size:12px">'+e.summary+'</td>'+
-        '<td style="text-align:center"><span class="badge type-'+e.type+'">'+(e.type==='step-up'?'STEP-UP':e.type)+'</span>'+(e.zoom?' <span style="font-size:10px;color:#0891b2">📹</span>':'')+'</td>'+
-        '<td style="text-align:center;color:var(--text2)">'+e.duration+' דק\'</td>'+
-        '</tr>';
-    });
+    const plainDash = summary.indexOf('-');
+    if(plainDash > 0) {
+      namePart = summary.slice(0, plainDash).trim();
+    } else {
+      // פורמט STEP-UP: "שם לקוח and ניר זד" — לקחת רק לפני " and "
+      const andIdx = summary.indexOf(' and ');
+      namePart = andIdx > 0 ? summary.slice(0, andIdx).trim() : summary.trim();
+    }
   }
-  html+='</table></div>';
-  var dd=document.getElementById('calData');
-  if(dd)dd.innerHTML=html;
+
+  return {
+    id: event.id,
+    summary,
+    client: namePart,
+    type,
+    zoom: isZoom,
+    duration,
+    start: start.toISOString(),
+    end: end.toISOString(),
+    date: start.toLocaleDateString('he-IL'),
+  };
 }
 
-function setCalRange(r){
-  var now=new Date();
-  if(r==='today'){calFrom=toISO(now);calTo=toISO(now);}
-  else if(r==='week'){
-    var s=new Date(now);s.setDate(now.getDate()-now.getDay());
-    var e=new Date(s);e.setDate(s.getDate()+6);
-    calFrom=toISO(s);calTo=toISO(e);
-  }
-  else if(r==='month'){
-    calFrom=toISO(new Date(now.getFullYear(),now.getMonth(),1));
-    calTo=toISO(now);
-  }
-  else if(r==='year'){
-    calFrom=toISO(new Date(now.getFullYear(),0,1));
-    calTo=toISO(now);
-  }
-  var f=document.getElementById('calFrom');var t=document.getElementById('calTo');
-  if(f){f.value=calFrom;calFrom=f.value;}
-  if(t){t.value=calTo;calTo=t.value;}
-  loadCalendar();
+async function getCalendarData(timeMin, timeMax) {
+  if (!CALENDAR_CREDS) throw new Error('GOOGLE_CREDENTIALS not set');
+  const token = await getGoogleToken(CALENDAR_CREDS);
+  const [r1, r2, r3] = await Promise.all([
+    fetchAllCalendarEvents(token, CALENDAR_ID, timeMin, timeMax),
+    fetchAllCalendarEvents(token, CALENDAR_ID_STEPUP, timeMin, timeMax),
+    fetchAllCalendarEvents(token, CALENDAR_ID_CONSULT, timeMin, timeMax),
+  ]);
+  const events = [
+    ...(r1.items || []).filter(e => e.status !== 'cancelled'),
+    ...(r2.items || []).filter(e => e.status !== 'cancelled'),
+    ...(r3.items || []).filter(e => e.status !== 'cancelled'),
+  ];
+  return events.map(classifyEvent).filter(e => e !== null);
 }
 
-// טעינה ראשונית
-load();
-setInterval(load, 5*60*1000);
+// ─── HTTP Server ──────────────────────────────────────────────────────────────
 
-// טען totalActive בצורה עצמאית לתצוגה ראשונית של המשפך
-fetch('/coaching').then(r=>r.json()).then(j=>{
-  if(j.ok){
-    totalActiveCoaching=j.totalActive;
-    var el=document.getElementById('funnelActiveCount');
-    if(el)el.textContent=j.totalActive;
+const server = http.createServer(async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  if (req.method === 'OPTIONS') { res.writeHead(200); res.end(); return; }
+
+  if (req.url === '/data') {
+    try {
+      const data = await getAllData();
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: true, data, ts: new Date().toISOString() }));
+    } catch(e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: e.message }));
+    }
+    return;
+  }
+
+  if (req.url?.startsWith('/calendar')) {
+    try {
+      const url = new URL(req.url, 'http://localhost');
+      const from = url.searchParams.get('from');
+      const to = url.searchParams.get('to');
+      const timeMin = from ? new Date(from) : new Date(new Date().getFullYear(), 0, 1);
+      const timeMax = to ? new Date(to) : new Date();
+      timeMax.setHours(23, 59, 59);
+
+      const events = await getCalendarData(timeMin, timeMax);
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: true, events }));
+    } catch(e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: e.message }));
+    }
+    return;
+  }
+
+  // תיקון 2: /coaching מקבל from/to ומחזיר doneTotal
+  if (req.url?.startsWith('/coaching')) {
+    try {
+      // קריאת פרמטרי תאריך
+      const url = new URL(req.url, 'http://localhost');
+      const from = url.searchParams.get('from');
+      const to   = url.searchParams.get('to');
+      const timeMin = from ? new Date(from) : new Date(new Date().getTime() - 365 * 24 * 60 * 60 * 1000);
+      const timeMax = to   ? new Date(to)   : new Date(new Date().getTime() + 30  * 24 * 60 * 60 * 1000);
+      timeMax.setHours(23, 59, 59);
+
+      const coachingQuery = `{
+        boards(ids: 9949694755) {
+          groups(ids: ["new_group29179"]) {
+            items_page(limit: 100) {
+              items {
+                id name
+                column_values(ids: ["numeric_mky8ze04"]) { id text }
+              }
+            }
+          }
+        }
+      }`;
+      const mondayRes = await fetchMonday(coachingQuery);
+      const active = mondayRes.data?.boards?.[0]?.groups?.[0]?.items_page?.items || [];
+      const totalActive = active.length;
+
+      const token = await getGoogleToken(CALENDAR_CREDS);
+      const [r1, r2, r3] = await Promise.all([
+        fetchAllCalendarEvents(token, CALENDAR_ID, timeMin, timeMax),
+        fetchAllCalendarEvents(token, CALENDAR_ID_STEPUP, timeMin, timeMax),
+        fetchAllCalendarEvents(token, CALENDAR_ID_CONSULT, timeMin, timeMax),
+      ]);
+
+      const VALID_DURATIONS = [60];
+
+      const allEvents = [
+        ...(r1.items || []),
+        ...(r2.items || []),
+        ...(r3.items || []),
+      ].filter(e => e.status !== 'cancelled' && e.start?.dateTime);
+
+      const clients = active.map(item => {
+        const fullName = item.name;
+        const searchName = item.name.split(' ')[0];
+        const purchased = parseInt(item.column_values?.find(c => c.id === 'numeric_mky8ze04')?.text || '0') || 0;
+
+        const matched = allEvents.filter(e => {
+          const title = e.summary || '';
+          const start = new Date(e.start.dateTime);
+          const end = new Date(e.end.dateTime);
+          const duration = (end - start) / 60000;
+          if (!VALID_DURATIONS.includes(duration)) return false;
+
+          // חייב להיות פורמט "שם - ..." — הפורמט היחיד של פגישת לקוח
+          // ללא מקף = פגישה פנימית / אישית, לא ליווי
+          const hasDash = title.includes(' - ') || title.includes(' —') || /\w-\w/.test(title);
+          if (!hasDash) return false;
+
+          // קודם שם מלא — מדויק יותר (פתרון בעיית דניאל)
+          const fullMatch =
+            title.startsWith(fullName + ' -') ||
+            title.startsWith(fullName + ' —') ||
+            title.startsWith(fullName + '-');
+
+          if (fullMatch) return true;
+
+          // שם פרטי בלבד — רק אם שם מלא לא התאים
+          const firstMatch =
+            title.startsWith(searchName + ' -') ||
+            title.startsWith(searchName + ' —') ||
+            title.startsWith(searchName + '-');
+
+          return firstMatch;
+        });
+
+        const done = matched.length;
+        const lastEvent = matched.sort((a, b) => new Date(b.start.dateTime) - new Date(a.start.dateTime))[0];
+        const last = lastEvent ? new Date(lastEvent.start.dateTime).toLocaleDateString('he-IL') : '';
+        const remaining = purchased > 0 ? purchased - done : null;
+        const alert = remaining !== null && remaining <= 2;
+
+        return { name: fullName, purchased, done, remaining, alert, last };
+      });
+
+      // תיקון 3: doneTotal — סכום כל הליוויים שבוצעו בטווח
+      const doneTotal = clients.reduce((s, c) => s + c.done, 0);
+
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: true, totalActive, doneTotal, clients }));
+
+    } catch(e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: e.message }));
+    }
+    return;
+  }
+
+  // /comm — מעקב טיפול בלידים נכנסים
+  if (req.url?.startsWith('/comm')) {
+    try {
+      // שלוף לידים + updates שלהם
+      const leadsQuery = `{
+        boards(ids: 9949694708) {
+          groups(ids: ["topics", "group_mky8hb65"]) {
+            items_page(limit: 500) {
+              items {
+                id
+                name
+                created_at
+                column_values(ids: ["lead_status", "date_mm00ds06", "color_mkvd5y1g", "lead_phone"]) { id text }
+                updates(limit: 20) {
+                  id
+                  body
+                  created_at
+                }
+              }
+            }
+          }
+        }
+      }`;
+
+      const mondayRes = await fetchMonday(leadsQuery);
+      const urlComm = new URL(req.url, 'http://localhost');
+      const days = parseInt(urlComm.searchParams.get('days') || '60');
+      const sinceDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+      const groups = mondayRes.data?.boards?.[0]?.groups || [];
+      const items = groups.flatMap(g => g.items_page?.items || []);
+
+      const leadsRaw = items.map(item => {
+        const gv = (col) => item.column_values?.find(c => c.id === col)?.text || '';
+        // סנן לפי תאריך פנייה
+        const dateStr = gv('date_mm00ds06');
+        const leadDate = dateStr ? new Date(dateStr) : new Date(item.created_at);
+        if (leadDate < sinceDate) return null;
+        const status = gv('lead_status');
+        const source = gv('color_mkvd5y1g');
+        const phone = gv('lead_phone');
+
+        // חפש updates של שיחות — פורמט אחיד:
+        // "שיחה נענתה" / "שיחה לא נענתה" + כיוון מ-Client Notes + משך זמן
+        const callUpdates = (item.updates || []).filter(u =>
+          u.body && (
+            u.body.includes('שיחה נענתה') ||
+            u.body.includes('שיחה לא נענתה') ||
+            u.body.includes('ניסיון שיחה') ||
+            u.body.includes('משך זמן')
+          )
+        );
+
+        let callStatus = 'לא טופל';
+        let lastCallDate = null;
+        let callCount = callUpdates.length;
+
+        if (callUpdates.length > 0) {
+          callUpdates.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          const last = callUpdates[0];
+          lastCallDate = new Date(last.created_at).toLocaleDateString('he-IL');
+          const body = last.body || '';
+
+          // סטטוס
+          // נענה = "שיחה נענתה". לא נענה = "שיחה לא נענתה" או "ניסיון שיחה"
+          const isAnswer = body.includes('שיחה נענתה') && !body.includes('שיחה לא נענתה');
+
+          // כיוון — מ-Client Notes
+          const isIncoming = body.includes('Caller is the Client');
+          const isOutgoing = !isIncoming;
+
+          // חילוץ משך בדקות
+          let durationMin = 0;
+          const durMatch = body.match(/משך זמן[^\d]*(\d+):(\d+)/);
+          if (durMatch) {
+            durationMin = parseInt(durMatch[1]) + parseInt(durMatch[2]) / 60;
+          }
+
+          // לוגיקה
+          if (isOutgoing && isAnswer && durationMin >= 3) callStatus = 'טופל';
+          else if (isOutgoing && isAnswer && durationMin < 3) callStatus = 'לא רציני';
+          else if (isOutgoing && !isAnswer) callStatus = 'לא ענה';
+          else if (isIncoming && isAnswer && durationMin >= 3) callStatus = 'טופל';
+          else if (isIncoming && isAnswer && durationMin < 3) callStatus = 'לא רציני';
+          else if (isIncoming && !isAnswer) callStatus = 'פספסנו';
+        }
+
+        // בדוק אם קבע פגישה לפי סטטוס במאנדיי
+        const BOOKED_STATUSES = ['נקבעה שיחה', 'פגישת StepUp', 'נמכר ליווי', 'רלוונטי-העבר למכירות'];
+        const hasBooked = BOOKED_STATUSES.includes(status);
+
+        // אם קבע פגישה ואין שיחות — סטטוס מיוחד
+        if (callStatus === 'לא טופל' && hasBooked) callStatus = 'קבע פגישה';
+
+        return {
+          id: item.id,
+          name: item.name,
+          status,
+          source,
+          leadDate: leadDate.toLocaleDateString('he-IL'),
+          phone,
+          callCount,
+          callStatus,
+          lastCallDate,
+          hasBooked,
+        };
+      });
+
+      const leads = leadsRaw.filter(l => l !== null);
+      // מיין לפי תאריך פנייה — החדש למעלה
+      leads.sort((a, b) => new Date(b.leadDate.split('/').reverse().join('-')) - new Date(a.leadDate.split('/').reverse().join('-')));
+
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: true, leads }));
+
+    } catch(e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: e.message }));
+    }
+    return;
+  }
+
+  if (req.url === '/health') { res.writeHead(200); res.end('OK'); return; }
+
+  // route בדיקה זמני — שולף activity_logs של 3 לידים ראשונים
+  if (req.url === '/test-activity') {
+    try {
+      const q = `{
+        boards(ids: 9949694708) {
+          items_page(limit: 3) {
+            items {
+              id name
+              activity_logs(limit: 10) {
+                id event data created_at
+              }
+            }
+          }
+        }
+      }`;
+      const r = await fetchMonday(q);
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: true, data: r.data }, null, 2));
+    } catch(e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: e.message }));
+    }
+    return;
+  }
+
+  try {
+    const html = fs.readFileSync(path.join('/opt/render/project/src', 'index.html'), 'utf8');
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(html);
+  } catch(e) {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Error reading index.html: ' + e.message);
   }
 });
-</script>
-</body>
-</html>
+
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`CWD: ${process.cwd()}`);
+  console.log(`__dirname: ${__dirname}`);
+  console.log(`Calendar credentials: ${CALENDAR_CREDS ? 'loaded' : 'MISSING'}`);
+});
