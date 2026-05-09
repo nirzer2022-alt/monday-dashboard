@@ -454,7 +454,7 @@ const server = http.createServer(async (req, res) => {
         const hasBooked = BOOKED_STATUSES.includes(status);
 
         // אם קבע פגישה ואין שיחות — סטטוס מיוחד
-        if (callStatus === 'לא טופל' && hasBooked) callStatus = 'קבע פגישה';
+        if (callStatus === 'לא טופל' && hasBooked) callStatus = 'נקבעה שיחה';
 
         return {
           id: item.id,
