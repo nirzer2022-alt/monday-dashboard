@@ -241,37 +241,57 @@ function getRangeDates(r){
   if(r==='custom'&&customFrom&&customTo){return{from:customFrom,to:customTo};}
   const s=new Date(now.getTime()-365*24*60*60*1000);return{from:toISO(s),to:toISO(now)};
 }
-function render(){
+async function render(){
   document.getElementById('sub').textContent=label(range);
   if(range==='compare'){cmp();return;}
   if(range==='comm'){commTab();return;}
   const L=filter(data.leads||[],range,'date_mm00ds06');
   const S=filter(data.sales||[],range,'date_mm00jx0c');
-  const T=filter(data.stepup||[],range,'date4');
   const contact=L.length;
-  const adv=L.filter(i=>ADV.includes(gv(i,'lead_status'))).length+S.filter(i=>['פגישת StepUp','נמכר ליווי','פולאו-אפ'].includes(gv(i,'deal_stage'))).length;
-  const su=T.length;
   const sold=S.filter(i=>gv(i,'deal_stage')==='נמכר ליווי').length;
-  const c1=contact>0?Math.round(adv/contact*100):0;
-  const c2=adv>0?Math.round(su/adv*100):0;
-  const c3=su>0?Math.round(sold/su*100):0;
   const sm={};SRC.forEach(s=>sm[s.key]={c:0,a:0,su:0,sold:0});
   L.forEach(i=>{const s=normSource(gv(i,'color_mkvd5y1g'));if(!sm[s])sm[s]={c:0,a:0,su:0,sold:0};sm[s].c++;if(ADV.includes(gv(i,'lead_status')))sm[s].a++;});
   const dates=getRangeDates(range);
   const coachingUrl='/coaching?from='+dates.from+'&to='+dates.to;
+
+  // טעינה ראשונית עם placeholder לנתוני יומן
   document.getElementById('content').innerHTML=
-    '<div class="metrics">'+
+    '<div class="metrics" id="mainMetrics">'+
     '<div class="mc"><div class="mc-label">יצרו קשר</div><div class="mc-value c-blue">'+contact+'</div><div class="mc-sub c-text2">כניסות</div></div>'+
-    '<div class="mc"><div class="mc-label">שיחת ייעוץ</div><div class="mc-value c-green">'+adv+'</div><div class="mc-sub c-green">'+c1+'% המרה</div></div>'+
-    '<div class="mc"><div class="mc-label">פגישת STEP-UP</div><div class="mc-value c-amber">'+su+'</div><div class="mc-sub c-amber">'+c2+'% מהשיחות</div></div>'+
-    '<div class="mc"><div class="mc-label">רכישת ליווי</div><div class="mc-value c-purple">'+sold+'</div><div class="mc-sub c-purple">'+c3+'% מ-STEP-UP</div></div>'+
+    '<div class="mc"><div class="mc-label">שיחת ייעוץ</div><div class="mc-value c-green" id="mAdv">...</div><div class="mc-sub c-green" id="mAdv2"></div></div>'+
+    '<div class="mc"><div class="mc-label">פגישת STEP-UP</div><div class="mc-value c-amber" id="mSu">...</div><div class="mc-sub c-amber" id="mSu2"></div></div>'+
+    '<div class="mc"><div class="mc-label">רכישת ליווי</div><div class="mc-value c-purple">'+sold+'</div><div class="mc-sub c-purple" id="mSold2"></div></div>'+
     '<div class="mc"><div class="mc-label">פגישות ליווי</div><div class="mc-value c-text2" id="metricDone">...</div><div class="mc-sub c-text2">בוצעו בטווח</div></div>'+
     '</div>'+
     '<div class="row2">'+
-    '<div class="card"><div class="card-title">משפך המרה</div>'+funnel(contact,adv,su,sold)+'</div>'+
+    '<div class="card"><div class="card-title">משפך המרה</div><div id="funnelDiv">טוען...</div></div>'+
     '<div class="card"><div class="card-title">פירוט מקורות</div>'+srcTable(sm,contact)+'</div>'+
     '</div>'+
     '<div class="card" style="margin-bottom:12px"><div class="card-title">ליוויים פעילים</div>'+coach(coachingUrl)+'</div>';
+
+  // טען נתוני יומן
+  try{
+    const res=await fetch('/calendar?from='+dates.from+'&to='+dates.to);
+    const j=await res.json();
+    if(j.ok){
+      const events=j.events||[];
+      const adv=events.filter(e=>e.type==='ייעוץ').length;
+      const su=events.filter(e=>e.type==='step-up').length;
+      const c1=contact>0?Math.round(adv/contact*100):0;
+      const c2=adv>0?Math.round(su/adv*100):0;
+      const c3=su>0?Math.round(sold/su*100):0;
+      var el;
+      el=document.getElementById('mAdv');if(el)el.textContent=adv;
+      el=document.getElementById('mAdv2');if(el)el.textContent=c1+'% המרה';
+      el=document.getElementById('mSu');if(el)el.textContent=su;
+      el=document.getElementById('mSu2');if(el)el.textContent=c2+'% מהשיחות';
+      el=document.getElementById('mSold2');if(el)el.textContent=c3+'% מ-STEP-UP';
+      el=document.getElementById('funnelDiv');if(el)el.innerHTML=funnel(contact,adv,su,sold);
+    }
+  }catch(e){
+    var el=document.getElementById('mAdv');if(el)el.textContent='?';
+    var el2=document.getElementById('mSu');if(el2)el2.textContent='?';
+  }
 }
 function funnel(contact,adv,su,sold){
   const steps=[
