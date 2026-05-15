@@ -560,21 +560,10 @@ async function loadCalendar(){
   }
 }
 
-// FIX: סינון טאב יומן —
-// ליווי ו-STEP-UP: מסונן לפי activeClientNames (מ-/coaching)
-// ייעוץ ושירות: מוצגים תמיד (אין סינון)
+// טאב יומן — מציג את כל האירועים מהיומן
+// סינון לפי activeClientNames הוסר — גרם לאי-עקביות עם /stats
 function renderCalendarData(){
   var events=calEvents.slice();
-
-  // FIX: סינון חכם לפי סוג פגישה
-  if(activeClientNames.size>0){
-    events=events.filter(function(e){
-      // ייעוץ ושירות — הצג תמיד, ללא קשר לרשימת לקוחות
-      if(e.type==='ייעוץ'||e.type==='שירות') return true;
-      // ליווי ו-STEP-UP — רק לקוחות פעילים
-      return activeClientNames.has(e.client.trim().toLowerCase());
-    });
-  }
 
   // סינון משך
   if(calDuration>0){events=events.filter(function(e){return Math.abs(e.duration-calDuration)<=5;});}
