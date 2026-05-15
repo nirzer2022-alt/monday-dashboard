@@ -544,6 +544,7 @@ const server = http.createServer(async (req, res) => {
           status,
           source,
           leadDate: leadDate.toLocaleDateString('he-IL'),
+          leadDateRaw: leadDate.getTime(), // FIX: שמור timestamp לצורך מיון אמין
           phone,
           callCount,
           callStatus,
@@ -553,7 +554,8 @@ const server = http.createServer(async (req, res) => {
       });
 
       const leads = leadsRaw.filter(l => l !== null);
-      leads.sort((a, b) => new Date(b.leadDate.split('/').reverse().join('-')) - new Date(a.leadDate.split('/').reverse().join('-')));
+      // FIX: מיון לפי timestamp — לא לפי string מפורמט (שגרם לבעיות)
+      leads.sort((a, b) => b.leadDateRaw - a.leadDateRaw);
 
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ ok: true, leads }));
