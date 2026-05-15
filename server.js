@@ -267,11 +267,10 @@ const server = http.createServer(async (req, res) => {
   // אירוע שנתפס על ידי fullName של לקוח A — לא נספר עבור firstName של לקוח B
   if (req.url?.startsWith('/coaching')) {
     try {
-      const url = new URL(req.url, 'http://localhost');
-      const from = url.searchParams.get('from');
-      const to   = url.searchParams.get('to');
-      const timeMin = from ? new Date(from) : new Date(new Date().getTime() - 365 * 24 * 60 * 60 * 1000);
-      const timeMax = to   ? new Date(to)   : new Date(new Date().getTime() + 30  * 24 * 60 * 60 * 1000);
+      // יתרה = נרכשו - סך כל הפגישות שבוצעו אי פעם (ללא קשר לטווח הנבחר בדשבורד)
+      // תמיד טוענים שנתיים אחורה + 3 חודשים קדימה
+      const timeMin = new Date(new Date().getTime() - 2 * 365 * 24 * 60 * 60 * 1000);
+      const timeMax = new Date();
       timeMax.setHours(23, 59, 59);
 
       const coachingQuery = `{
