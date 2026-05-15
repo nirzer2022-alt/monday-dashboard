@@ -568,8 +568,14 @@ function renderCalendarData(){
   // סינון משך
   if(calDuration>0){events=events.filter(function(e){return Math.abs(e.duration-calDuration)<=5;});}
 
-  // חיפוש חופשי
-  if(calClientFilter.trim()){var q=calClientFilter.trim().toLowerCase();events=events.filter(function(e){return e.client.toLowerCase().includes(q);});}
+  // חיפוש — לפי תחילת שם או תחילת מילה ("דן" לא יחזיר "ירדן")
+  if(calClientFilter.trim()){
+    var q=calClientFilter.trim().toLowerCase();
+    events=events.filter(function(e){
+      var name=e.client.toLowerCase();
+      return name.startsWith(q)||name.split(' ').some(function(w){return w.startsWith(q);});
+    });
+  }
 
   // סטטיסטיקות
   var byType={ליווי:0,'step-up':0,ייעוץ:0,שירות:0};
@@ -640,7 +646,7 @@ function renderCalendarData(){
 function setCalRange(r){
   var now=new Date();
   if(r==='today'){calFrom=toISO(now);calTo=toISO(now);}
-  else if(r==='week'){var s=new Date(now);s.setDate(now.getDate()-now.getDay());var e=new Date(s);e.setDate(s.getDate()+6);calFrom=toISO(s);calTo=toISO(e);}
+  else if(r==='week'){var s=new Date(now);s.setDate(now.getDate()-6);s.setHours(0,0,0,0);calFrom=toISO(s);calTo=toISO(now);}
   else if(r==='month'){calFrom=toISO(new Date(now.getFullYear(),now.getMonth(),1));calTo=toISO(now);}
   else if(r==='year'){calFrom=toISO(new Date(now.getFullYear(),0,1));calTo=toISO(now);}
   var f=document.getElementById('calFrom'),t=document.getElementById('calTo');
