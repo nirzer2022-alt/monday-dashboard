@@ -10,7 +10,6 @@ const CALENDAR_ID = process.env.CALENDAR_ID || 'nirzer2022@gmail.com';
 const CALENDAR_ID_STEPUP = '3fafd7868d8f30ef280cf29ecbd74ef79f75ba465c6c0b488145246726bae0e7@group.calendar.google.com';
 const CALENDAR_ID_CONSULT = '96776edd0002b6adf80277d291cc40ca40f5c49b0e37f390226ca1758fc4055a@group.calendar.google.com';
 
-// תיקון 1: הוספת date4 ל-stepup ו-date_mm00jx0c ל-sales
 const BOARDS = {
   leads:    { id: 9949694708, cols: ['lead_status', 'color_mkvd5y1g', 'date_mm00ds06'] },
   sales:    { id: 9949694887, cols: ['deal_stage', 'date_mm00jx0c'] },
@@ -165,8 +164,6 @@ function classifyEvent(event) {
   const knownDuration = duration===20 || duration===30 || duration===60 || duration===120;
   if (!knownDuration) return null;
 
-  // פגישות 120 דקות (STEP-UP) ו-20 דקות (ייעוץ מ-Calendly) — פורמט "שם and ניר זד", בלי מקף
-  // פגישות אחרות — חייב מקף: "שם - סוג פגישה". ללא מקף = פגישה פנימית
   if (duration !== 120 && duration !== 20) {
     const hasDash = summary.includes(' - ') || summary.includes(' — ') || (summary.includes('-') && !summary.startsWith('-'));
     if (!hasDash) return null;
@@ -192,7 +189,6 @@ function classifyEvent(event) {
     if(plainDash > 0) {
       namePart = summary.slice(0, plainDash).trim();
     } else {
-      // פורמט STEP-UP: "שם לקוח and ניר זד" — לקחת רק לפני " and "
       const andIdx = summary.indexOf(' and ');
       namePart = andIdx > 0 ? summary.slice(0, andIdx).trim() : summary.trim();
     }
@@ -233,6 +229,7 @@ const server = http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method === 'OPTIONS') { res.writeHead(200); res.end(); return; }
 
+  // ─── /data ────────────────────────────────────────────────────────────────
   if (req.url === '/data') {
     try {
       const data = await getAllData();
@@ -245,6 +242,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // ─── /calendar ────────────────────────────────────────────────────────────
   if (req.url?.startsWith('/calendar')) {
     try {
       const url = new URL(req.url, 'http://localhost');
@@ -264,10 +262,11 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // תיקון 2: /coaching מקבל from/to ומחזיר doneTotal
+  // ─── /coaching ────────────────────────────────────────────────────────────
+  // FIX: disambiguation של שמות — fullName תמיד מנצח firstName
+  // אירוע שנתפס על ידי fullName של לקוח A — לא נספר עבור firstName של לקוח B
   if (req.url?.startsWith('/coaching')) {
     try {
-      // קריאת פרמטרי תאריך
       const url = new URL(req.url, 'http://localhost');
       const from = url.searchParams.get('from');
       const to   = url.searchParams.get('to');
@@ -306,39 +305,66 @@ const server = http.createServer(async (req, res) => {
         ...(r3.items || []),
       ].filter(e => e.status !== 'cancelled' && e.start?.dateTime);
 
+      // ── STEP 1: בנה מפת fullName → אירועים תואמים (שם מלא בלבד) ──────────
+      function eventMatchesFull(e, fullName) {
+        const title = e.summary || '';
+        const start = new Date(e.start.dateTime);
+        const end   = new Date(e.end.dateTime);
+        const duration = (end - start) / 60000;
+        if (!VALID_DURATIONS.includes(duration)) return false;
+        const hasDash = title.includes(' - ') || title.includes(' —') || /\w-\w/.test(title);
+        if (!hasDash) return false;
+        return (
+          title.startsWith(fullName + ' -') ||
+          title.startsWith(fullName + ' —') ||
+          title.startsWith(fullName + '-')
+        );
+      }
+
+      function eventMatchesFirst(e, firstName) {
+        const title = e.summary || '';
+        const start = new Date(e.start.dateTime);
+        const end   = new Date(e.end.dateTime);
+        const duration = (end - start) / 60000;
+        if (!VALID_DURATIONS.includes(duration)) return false;
+        const hasDash = title.includes(' - ') || title.includes(' —') || /\w-\w/.test(title);
+        if (!hasDash) return false;
+        return (
+          title.startsWith(firstName + ' -') ||
+          title.startsWith(firstName + ' —') ||
+          title.startsWith(firstName + '-')
+        );
+      }
+
+      // מפה: fullName → רשימת אירועים שתואמים שם מלא
+      const fullNameMatchMap = {};
+      active.forEach(item => {
+        fullNameMatchMap[item.name] = allEvents.filter(e => eventMatchesFull(e, item.name));
+      });
+
+      // set של event IDs שכבר "שויכו" לשם מלא — לא זמינים לשם פרטי
+      const claimedByFullName = new Set(
+        Object.values(fullNameMatchMap).flat().map(e => e.id)
+      );
+
+      // ── STEP 2: חשב כל לקוח ──────────────────────────────────────────────
       const clients = active.map(item => {
-        const fullName = item.name;
-        const searchName = item.name.split(' ')[0];
-        const purchased = parseInt(item.column_values?.find(c => c.id === 'numeric_mky8ze04')?.text || '0') || 0;
+        const fullName   = item.name;
+        const firstName  = item.name.split(' ')[0];
+        const purchased  = parseInt(item.column_values?.find(c => c.id === 'numeric_mky8ze04')?.text || '0') || 0;
 
-        const matched = allEvents.filter(e => {
-          const title = e.summary || '';
-          const start = new Date(e.start.dateTime);
-          const end = new Date(e.end.dateTime);
-          const duration = (end - start) / 60000;
-          if (!VALID_DURATIONS.includes(duration)) return false;
+        const fullMatched = fullNameMatchMap[fullName] || [];
 
-          // חייב להיות פורמט "שם - ..." — הפורמט היחיד של פגישת לקוח
-          // ללא מקף = פגישה פנימית / אישית, לא ליווי
-          const hasDash = title.includes(' - ') || title.includes(' —') || /\w-\w/.test(title);
-          if (!hasDash) return false;
+        // firstName match — רק אם אין fullMatch לאותו לקוח,
+        // ורק אירועים שלא תפוסים על ידי fullName של לקוח אחר
+        const firstMatched = fullMatched.length === 0
+          ? allEvents.filter(e => {
+              if (claimedByFullName.has(e.id)) return false; // תפוס → דלג
+              return eventMatchesFirst(e, firstName);
+            })
+          : [];
 
-          // קודם שם מלא — מדויק יותר (פתרון בעיית דניאל)
-          const fullMatch =
-            title.startsWith(fullName + ' -') ||
-            title.startsWith(fullName + ' —') ||
-            title.startsWith(fullName + '-');
-
-          if (fullMatch) return true;
-
-          // שם פרטי בלבד — רק אם שם מלא לא התאים
-          const firstMatch =
-            title.startsWith(searchName + ' -') ||
-            title.startsWith(searchName + ' —') ||
-            title.startsWith(searchName + '-');
-
-          return firstMatch;
-        });
+        const matched = [...fullMatched, ...firstMatched];
 
         const done = matched.length;
         const lastEvent = matched.sort((a, b) => new Date(b.start.dateTime) - new Date(a.start.dateTime))[0];
@@ -349,7 +375,6 @@ const server = http.createServer(async (req, res) => {
         return { name: fullName, purchased, done, remaining, alert, last };
       });
 
-      // תיקון 3: doneTotal — סכום כל הליוויים שבוצעו בטווח
       const doneTotal = clients.reduce((s, c) => s + c.done, 0);
 
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -362,10 +387,80 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // /comm — מעקב טיפול בלידים נכנסים
+  // ─── /stats ───────────────────────────────────────────────────────────────
+  // שכבת ספירה אחידה — מקור יחיד לכל המספרים בדשבורד
+  // מחזיר: leads, advCount, stepupCount, sold + doneTotal מאותם אירועי יומן
+  if (req.url?.startsWith('/stats')) {
+    try {
+      const url = new URL(req.url, 'http://localhost');
+      const from = url.searchParams.get('from');
+      const to   = url.searchParams.get('to');
+      const timeMin = from ? new Date(from) : new Date(new Date().getFullYear(), 0, 1);
+      const timeMax = to   ? new Date(to)   : new Date();
+      timeMax.setHours(23, 59, 59);
+
+      // מאנדיי + יומן במקביל
+      const [mondayData, calEvents] = await Promise.all([
+        getAllData(),
+        getCalendarData(timeMin, timeMax),
+      ]);
+
+      // סינון לפי טווח — תמיד לפי אותה פונקציה
+      function inRange(dateStr, col) {
+        if (!dateStr) return false;
+        const d = new Date(dateStr.replace(' ', 'T'));
+        return !isNaN(d) && d >= timeMin && d <= timeMax;
+      }
+
+      const gv = (item, col) => item.column_values?.find(c => c.id === col)?.text || '';
+
+      // לידים — לפי date_mm00ds06
+      const leads = (mondayData.leads || []).filter(i => {
+        const v = gv(i, 'date_mm00ds06');
+        return v && inRange(v);
+      });
+
+      // STEP-UP מאנדיי — לפי date4 (להשוואת חודשים)
+      const stepupMonday = (mondayData.stepup || []).filter(i => {
+        const v = gv(i, 'date4');
+        return v && inRange(v);
+      });
+
+      // מכירות — לפי date_mm00jx0c
+      const sales = (mondayData.sales || []).filter(i => {
+        const v = gv(i, 'date_mm00jx0c');
+        return v && inRange(v);
+      });
+      const sold = sales.filter(i => gv(i, 'deal_stage') === 'נמכר ליווי').length;
+
+      // יומן — כבר מסונן לפי timeMin/timeMax מהשרת
+      const advCount    = calEvents.filter(e => e.type === 'ייעוץ').length;
+      const stepupCount = calEvents.filter(e => e.type === 'step-up').length;
+      const serviceCount = calEvents.filter(e => e.type === 'שירות').length;
+      const coachingCount = calEvents.filter(e => e.type === 'ליווי').length;
+
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({
+        ok: true,
+        range: { from: timeMin.toISOString(), to: timeMax.toISOString() },
+        leads: leads.length,
+        advCount,       // שיחות ייעוץ מיומן
+        stepupCount,    // פגישות STEP-UP מיומן
+        stepupMonday: stepupMonday.length, // STEP-UP ממאנדיי (להשוואת חודשים)
+        sold,           // רכישות ליווי
+        serviceCount,   // שיחות שירות מיומן
+        coachingCount,  // פגישות ליווי מיומן
+      }));
+    } catch(e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: e.message }));
+    }
+    return;
+  }
+
+  // ─── /comm ────────────────────────────────────────────────────────────────
   if (req.url?.startsWith('/comm')) {
     try {
-      // שלוף לידים + updates שלהם
       const leadsQuery = `{
         boards(ids: 9949694708) {
           groups(ids: ["topics", "group_mky8hb65"]) {
@@ -396,7 +491,6 @@ const server = http.createServer(async (req, res) => {
 
       const leadsRaw = items.map(item => {
         const gv = (col) => item.column_values?.find(c => c.id === col)?.text || '';
-        // סנן לפי תאריך פנייה
         const dateStr = gv('date_mm00ds06');
         const leadDate = dateStr ? new Date(dateStr) : new Date(item.created_at);
         if (leadDate < sinceDate) return null;
@@ -404,8 +498,6 @@ const server = http.createServer(async (req, res) => {
         const source = gv('color_mkvd5y1g');
         const phone = gv('lead_phone');
 
-        // חפש updates של שיחות — פורמט אחיד:
-        // "שיחה נענתה" / "שיחה לא נענתה" + כיוון מ-Client Notes + משך זמן
         const callUpdates = (item.updates || []).filter(u =>
           u.body && (
             u.body.includes('שיחה נענתה') ||
@@ -425,35 +517,25 @@ const server = http.createServer(async (req, res) => {
           lastCallDate = new Date(last.created_at).toLocaleDateString('he-IL');
           const body = last.body || '';
 
-          // סטטוס
-          // נענה = "שיחה נענתה". לא נענה = "שיחה לא נענתה" או "ניסיון שיחה"
           const isAnswer = body.includes('שיחה נענתה') && !body.includes('שיחה לא נענתה');
-
-          // כיוון — מ-Client Notes
           const isIncoming = body.includes('Caller is the Client');
-          const isOutgoing = !isIncoming;
 
-          // חילוץ משך בדקות
           let durationMin = 0;
           const durMatch = body.match(/משך זמן[^\d]*(\d+):(\d+)/);
           if (durMatch) {
             durationMin = parseInt(durMatch[1]) + parseInt(durMatch[2]) / 60;
           }
 
-          // לוגיקה
-          if (isOutgoing && isAnswer && durationMin >= 3) callStatus = 'טופל';
-          else if (isOutgoing && isAnswer && durationMin < 3) callStatus = 'לא רציני';
-          else if (isOutgoing && !isAnswer) callStatus = 'לא ענה';
+          if (!isIncoming && isAnswer && durationMin >= 3) callStatus = 'טופל';
+          else if (!isIncoming && isAnswer && durationMin < 3) callStatus = 'לא רציני';
+          else if (!isIncoming && !isAnswer) callStatus = 'לא ענה';
           else if (isIncoming && isAnswer && durationMin >= 3) callStatus = 'טופל';
           else if (isIncoming && isAnswer && durationMin < 3) callStatus = 'לא רציני';
           else if (isIncoming && !isAnswer) callStatus = 'פספסנו';
         }
 
-        // בדוק אם קבע פגישה לפי סטטוס במאנדיי
         const BOOKED_STATUSES = ['נקבעה שיחה', 'פגישת StepUp', 'נמכר ליווי', 'רלוונטי-העבר למכירות'];
         const hasBooked = BOOKED_STATUSES.includes(status);
-
-        // אם קבע פגישה ואין שיחות — סטטוס מיוחד
         if (callStatus === 'לא טופל' && hasBooked) callStatus = 'נקבעה שיחה';
 
         return {
@@ -471,7 +553,6 @@ const server = http.createServer(async (req, res) => {
       });
 
       const leads = leadsRaw.filter(l => l !== null);
-      // מיין לפי תאריך פנייה — החדש למעלה
       leads.sort((a, b) => new Date(b.leadDate.split('/').reverse().join('-')) - new Date(a.leadDate.split('/').reverse().join('-')));
 
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -484,9 +565,10 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // ─── /health ──────────────────────────────────────────────────────────────
   if (req.url === '/health') { res.writeHead(200); res.end('OK'); return; }
 
-  // route בדיקה זמני — שולף activity_logs של 3 לידים ראשונים
+  // ─── /test-activity ───────────────────────────────────────────────────────
   if (req.url === '/test-activity') {
     try {
       const q = `{
@@ -511,6 +593,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // ─── index.html ───────────────────────────────────────────────────────────
   try {
     const html = fs.readFileSync(path.join('/opt/render/project/src', 'index.html'), 'utf8');
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
