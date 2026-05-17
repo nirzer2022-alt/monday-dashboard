@@ -625,21 +625,19 @@ const server = http.createServer(async (req, res) => {
 
       // בנה מפות שם → נתונים
       const stepupItems = stepupRes.data?.boards?.[0]?.items_page?.items || [];
-      const stepupMap = {}; // fullName/firstName → { date, status }
+      const stepupMap = {}; // שם מלא בלבד — מניעת התאמה שגויה לפי שם פרטי
       stepupItems.forEach(item => {
         const d = gv(item, 'date4');
         const date = d ? new Date(d.replace(' ','T')) : null;
         stepupMap[item.name.trim().toLowerCase()] = { date, name: item.name };
-        stepupMap[item.name.trim().split(' ')[0].toLowerCase()] = { date, name: item.name };
       });
 
       const salesItems = salesRes.data?.boards?.[0]?.groups?.[0]?.items_page?.items || [];
-      const salesMap = {}; // name → { date, stage }
+      const salesMap = {}; // שם מלא בלבד — מניעת התאמה שגויה לפי שם פרטי
       salesItems.forEach(item => {
         const d = gv(item, 'date_mm00jx0c');
         const stage = gv(item, 'deal_stage');
         salesMap[item.name.trim().toLowerCase()] = { date: d ? new Date(d) : null, stage, name: item.name };
-        salesMap[item.name.trim().split(' ')[0].toLowerCase()] = { date: d ? new Date(d) : null, stage, name: item.name };
       });
 
       // אירועי ייעוץ מיומן — מפה לפי שם
@@ -649,10 +647,6 @@ const server = http.createServer(async (req, res) => {
         const key = e.client.trim().toLowerCase();
         if (!consultMap[key]) consultMap[key] = [];
         consultMap[key].push(e.start);
-        // גם שם פרטי
-        const first = e.client.trim().split(' ')[0].toLowerCase();
-        if (!consultMap[first]) consultMap[first] = [];
-        consultMap[first].push(e.start);
       });
 
       // בנה מסע לכל ליד
@@ -682,14 +676,14 @@ const server = http.createServer(async (req, res) => {
         });
 
         // ייעוץ מיומן
-        const consultDates = (consultMap[nameL] || consultMap[firstL] || [])
+        const consultDates = (consultMap[nameL] || [])
           .map(d => new Date(d).toLocaleDateString('he-IL'));
 
-        // STEP-UP
-        const su = stepupMap[nameL] || stepupMap[firstL] || null;
+        // STEP-UP — שם מלא בלבד
+        const su = stepupMap[nameL] || null;
 
-        // רכישה
-        const sale = salesMap[nameL] || salesMap[firstL] || null;
+        // רכישה — שם מלא בלבד
+        const sale = salesMap[nameL] || null;
         const sold = sale?.stage === 'נמכר ליווי';
 
         return {
