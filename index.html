@@ -195,7 +195,7 @@ function label(r){
 
 function setDR(r){
   const dr=document.getElementById('dr');
-  if(r==='calendar'||r==='comm'){dr.style.display='none';return;}
+  if(r==='calendar'||r==='comm'||r==='journey'){dr.style.display='none';return;}
   dr.style.display='inline-flex';
   dr.textContent='📅 '+label(r);
 }
@@ -220,6 +220,7 @@ async function load(){
 function reload(){
   if(range==='calendar')loadCalendar();
   else if(range==='comm')commTab();
+  else if(range==='journey')journeyTab();
   else load();
 }
 
@@ -236,6 +237,14 @@ function go(r,el){
     if(mainTabs)mainTabs.style.display='none';
     if(calTabs)calTabs.style.display='flex';
     renderCalendarShell();loadCalendar();
+  } else if(r==='journey'){
+    if(mainTabs)mainTabs.style.display='flex';
+    if(calTabs)calTabs.style.display='none';
+    journeyTab();
+  } else if(r==='comm'){
+    if(mainTabs)mainTabs.style.display='flex';
+    if(calTabs)calTabs.style.display='none';
+    commTab();
   } else {
     if(mainTabs)mainTabs.style.display='flex';
     if(calTabs)calTabs.style.display='none';
@@ -272,6 +281,7 @@ async function render(){
   document.getElementById('sub').textContent=label(range);
   if(range==='compare'){cmp();return;}
   if(range==='comm'){commTab();return;}
+  if(range==='journey'){journeyTab();return;}
 
   const dates=getRangeDates(range);
 
