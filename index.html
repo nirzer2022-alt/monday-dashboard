@@ -79,6 +79,15 @@ tr:last-child td{border-bottom:none;}
 .client-stat-lbl{font-size:10px;color:var(--text3);}
 .custom-range{display:flex;gap:8px;align-items:center;margin-right:8px;}
 .custom-range input[type=date]{border:1px solid var(--border);border-radius:8px;padding:5px 8px;font-size:12px;font-family:'Heebo',sans-serif;background:var(--bg2);color:var(--text);}
+.journey-table{width:100%;border-collapse:collapse;font-size:12px;}
+.journey-table th{text-align:right;color:var(--text3);font-weight:500;padding:8px 6px;border-bottom:2px solid var(--border);font-size:11px;white-space:nowrap;}
+.journey-table td{padding:8px 6px;border-bottom:1px solid var(--bg3);vertical-align:top;}
+.journey-table tr:last-child td{border-bottom:none;}
+.journey-table tr:hover td{background:#fafafa;}
+.step-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:4px;}
+.step-done{background:#16a34a;}.step-none{background:#e5e7eb;}
+.call-chip{display:inline-block;font-size:10px;padding:1px 6px;border-radius:10px;margin:1px;}
+.section-header{background:var(--bg3);padding:10px 16px;font-weight:700;font-size:13px;border-radius:8px;margin:16px 0 8px;}
 </style>
 </head>
 <body>
@@ -108,6 +117,7 @@ tr:last-child td{border-bottom:none;}
     </div>
     <button class="tab" onclick="go('comm',this)">📞 תקשורת</button>
     <button class="tab cal-tab" onclick="go('calendar',this)">📅 יומן פגישות</button>
+    <button class="tab" style="background:#fff7ed;border-color:#fed7aa;color:#c2410c" onclick="go('journey',this)">🗺️ מסע ליד</button>
   </div>
   <div class="tabs" id="calTabs" style="display:none">
     <button class="tab cal-tab active" onclick="setCalRange(this.dataset.r)" data-r="today">היום</button>
@@ -656,6 +666,119 @@ function setCalRange(r){
     if(btn.dataset.r===r)btn.classList.add('active');
   });
   loadCalendar();
+}
+
+// ── מסע ליד ───────────────────────────────────────────────────────────────
+var journeyFrom = '', journeyTo = '';
+
+async function journeyTab(from, to) {
+  const now = new Date();
+  if (!from) from = journeyFrom || (now.getFullYear() + '-05-01');
+  if (!to)   to   = journeyTo   || (now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0'));
+  journeyFrom = from; journeyTo = to;
+
+  document.getElementById('content').innerHTML =
+    '<div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap">' +
+    '<input type="date" id="jFrom" value="'+from+'" style="border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;font-family:Heebo,sans-serif">' +
+    '<span style="color:var(--text3)">עד</span>' +
+    '<input type="date" id="jTo" value="'+to+'" style="border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;font-family:Heebo,sans-serif">' +
+    '<button class="btn" style="background:#c2410c;color:#fff;border-color:#c2410c" onclick="journeyTab(document.getElementById('jFrom').value,document.getElementById('jTo').value)">טען</button>' +
+    '</div>' +
+    '<div style="text-align:center;padding:30px;color:#6b7280">טוען מסע לידים...</div>';
+
+  try {
+    const res = await fetch('/journey?from='+from+'&to='+to);
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error);
+    const all = j.journey || [];
+
+    const sold   = all.filter(l => l.sold);
+    const unsold = all.filter(l => !l.sold);
+
+    const statusColor = {
+      'נמכר ליווי':'background:#dcfce7;color:#15803d',
+      'לא רלוונטי':'background:#fee2e2;color:#dc2626',
+      'לא נמכר':'background:#fee2e2;color:#dc2626',
+      'נקבעה שיחה':'background:#dbeafe;color:#1d4ed8',
+      'פגישת StepUp':'background:#fef3c7;color:#b45309',
+      'פולאו-אפ':'background:#fef3c7;color:#b45309',
+    };
+
+    function callSummary(calls) {
+      if (!calls.length) return '<span style="color:var(--text3)">—</span>';
+      const answered = calls.filter(c => c.answered).length;
+      const total = calls.length;
+      const lastDur = calls[calls.length-1]?.dur || 0;
+      const color = answered === 0 ? '#dc2626' : lastDur >= 3 ? '#16a34a' : '#d97706';
+      return '<span style="color:'+color+';font-weight:700">'+answered+'/'+total+'</span>' +
+             '<div style="font-size:10px;color:var(--text3)">' + (calls[calls.length-1]?.date||'') + '</div>';
+    }
+
+    function stepDot(val) {
+      return '<span class="step-dot '+(val?'step-done':'step-none')+'"></span>';
+    }
+
+    function buildTable(rows, title, color) {
+      if (!rows.length) return '';
+      let h = '<div class="section-header" style="color:'+color+'">'+title+' ('+rows.length+')</div>';
+      h += '<div class="card" style="margin-bottom:16px;padding:0;overflow:auto">' +
+           '<table class="journey-table"><tr>' +
+           '<th>שם</th><th>תאריך פנייה</th><th>מקור</th><th style="text-align:center">שיחות</th>' +
+           '<th style="text-align:center">ייעוץ</th><th style="text-align:center">STEP-UP</th>' +
+           '<th style="text-align:center">רכישה</th><th>סטטוס</th></tr>';
+      rows.forEach(function(l) {
+        var sc = statusColor[l.status] || 'background:#f3f4f6;color:#6b7280';
+        var consultStr = l.consult.length
+          ? '<span style="color:#16a34a;font-weight:700">✓</span><div style="font-size:10px;color:var(--text3)">'+l.consult[0]+'</div>'
+          : '<span style="color:var(--text3)">—</span>';
+        var stepupStr = l.stepup
+          ? '<span style="color:#d97706;font-weight:700">✓</span><div style="font-size:10px;color:var(--text3)">'+l.stepup+'</div>'
+          : '<span style="color:var(--text3)">—</span>';
+        var saleStr = l.sold
+          ? '<span style="color:#7c3aed;font-weight:700">✓</span>'+(l.saleDate?'<div style="font-size:10px;color:var(--text3)">'+l.saleDate+'</div>':'')
+          : '<span style="color:var(--text3)">—</span>';
+        h += '<tr>' +
+          '<td style="font-weight:600;white-space:nowrap">'+l.name+'</td>' +
+          '<td style="color:var(--text2);white-space:nowrap">'+l.leadDate+'</td>' +
+          '<td><span class="badge" style="background:#dbeafe;color:#1d4ed8;font-size:10px">'+(l.source||'—')+'</span></td>' +
+          '<td style="text-align:center">'+callSummary(l.calls)+'</td>' +
+          '<td style="text-align:center">'+consultStr+'</td>' +
+          '<td style="text-align:center">'+stepupStr+'</td>' +
+          '<td style="text-align:center">'+saleStr+'</td>' +
+          '<td><span class="badge" style="'+sc+';font-size:10px">'+(l.status||'—')+'</span></td>' +
+          '</tr>';
+      });
+      h += '</table></div>';
+      return h;
+    }
+
+    const statsHtml =
+      '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px">' +
+      '<div class="mc"><div class="mc-label">סה"כ לידים</div><div class="mc-value c-blue">'+all.length+'</div></div>' +
+      '<div class="mc"><div class="mc-label">עברו ייעוץ</div><div class="mc-value c-green">'+all.filter(l=>l.consult.length).length+'</div></div>' +
+      '<div class="mc"><div class="mc-label">עברו STEP-UP</div><div class="mc-value c-amber">'+all.filter(l=>l.stepup).length+'</div></div>' +
+      '<div class="mc"><div class="mc-label">נמכרו</div><div class="mc-value c-purple">'+sold.length+'</div></div>' +
+      '<div class="mc"><div class="mc-label">המרה כוללת</div><div class="mc-value" style="color:#7c3aed">'+(all.length?Math.round(sold.length/all.length*100):0)+'%</div></div>' +
+      '</div>';
+
+    const fromEl = document.getElementById('jFrom');
+    const toEl   = document.getElementById('jTo');
+    const controls = (fromEl && toEl) ?
+      '<div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap">' +
+      '<input type="date" id="jFrom" value="'+journeyFrom+'" style="border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;font-family:Heebo,sans-serif">' +
+      '<span style="color:var(--text3)">עד</span>' +
+      '<input type="date" id="jTo" value="'+journeyTo+'" style="border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;font-family:Heebo,sans-serif">' +
+      '<button class="btn" style="background:#c2410c;color:#fff;border-color:#c2410c" onclick="journeyTab(document.getElementById('jFrom').value,document.getElementById('jTo').value)">טען</button>' +
+      '</div>' : '';
+
+    document.getElementById('content').innerHTML =
+      controls + statsHtml +
+      buildTable(sold,   '🟢 נמכר ליווי',          '#15803d') +
+      buildTable(unsold, '⚪ לא נמכר / לא רלוונטי', '#6b7280');
+
+  } catch(e) {
+    document.getElementById('content').innerHTML = '<div class="err">'+e.message+'</div>';
+  }
 }
 
 // ── טעינה ראשונית ─────────────────────────────────────────────────────────
