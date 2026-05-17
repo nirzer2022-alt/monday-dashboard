@@ -526,10 +526,10 @@ const server = http.createServer(async (req, res) => {
           }
 
           if (!isIncoming && isAnswer && durationMin >= 3) callStatus = 'טופל';
-          else if (!isIncoming && isAnswer && durationMin < 3) callStatus = 'לא רציני';
+          else if (!isIncoming && isAnswer && durationMin < 3) callStatus = 'שיחה קצרה';
           else if (!isIncoming && !isAnswer) callStatus = 'לא ענה';
           else if (isIncoming && isAnswer && durationMin >= 3) callStatus = 'טופל';
-          else if (isIncoming && isAnswer && durationMin < 3) callStatus = 'לא רציני';
+          else if (isIncoming && isAnswer && durationMin < 3) callStatus = 'שיחה קצרה';
           else if (isIncoming && !isAnswer) callStatus = 'פספסנו';
         }
 
