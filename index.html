@@ -671,6 +671,12 @@ function setCalRange(r){
 // ── מסע ליד ───────────────────────────────────────────────────────────────
 var journeyFrom = '', journeyTo = '';
 
+function journeyLoad() {
+  var f = document.getElementById('jFrom');
+  var t = document.getElementById('jTo');
+  if (f && t) journeyTab(f.value, t.value);
+}
+
 async function journeyTab(from, to) {
   const now = new Date();
   if (!from) from = journeyFrom || (now.getFullYear() + '-05-01');
@@ -682,7 +688,7 @@ async function journeyTab(from, to) {
     '<input type="date" id="jFrom" value="'+from+'" style="border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;font-family:Heebo,sans-serif">' +
     '<span style="color:var(--text3)">עד</span>' +
     '<input type="date" id="jTo" value="'+to+'" style="border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;font-family:Heebo,sans-serif">' +
-    '<button class="btn" style="background:#c2410c;color:#fff;border-color:#c2410c" onclick="journeyTab(document.getElementById('jFrom').value,document.getElementById('jTo').value)">טען</button>' +
+    '<button class="btn" style="background:#c2410c;color:#fff;border-color:#c2410c" onclick="journeyLoad()">טען</button>' +
     '</div>' +
     '<div style="text-align:center;padding:30px;color:#6b7280">טוען מסע לידים...</div>';
 
@@ -768,7 +774,7 @@ async function journeyTab(from, to) {
       '<input type="date" id="jFrom" value="'+journeyFrom+'" style="border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;font-family:Heebo,sans-serif">' +
       '<span style="color:var(--text3)">עד</span>' +
       '<input type="date" id="jTo" value="'+journeyTo+'" style="border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;font-family:Heebo,sans-serif">' +
-      '<button class="btn" style="background:#c2410c;color:#fff;border-color:#c2410c" onclick="journeyTab(document.getElementById('jFrom').value,document.getElementById('jTo').value)">טען</button>' +
+      '<button class="btn" style="background:#c2410c;color:#fff;border-color:#c2410c" onclick="journeyLoad()">טען</button>' +
       '</div>' : '';
 
     document.getElementById('content').innerHTML =
