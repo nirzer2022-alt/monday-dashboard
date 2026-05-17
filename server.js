@@ -268,7 +268,7 @@ const server = http.createServer(async (req, res) => {
   if (req.url?.startsWith('/coaching')) {
     try {
       // יתרה = נרכשו - סך כל הפגישות שבוצעו אי פעם (ללא קשר לטווח הנבחר בדשבורד)
-      // תמיד טוענים שנתיים אחורה + 3 חודשים קדימה
+      // תמיד טוענים שנתיים אחורה עד היום
       const timeMin = new Date(new Date().getTime() - 2 * 365 * 24 * 60 * 60 * 1000);
       const timeMax = new Date();
       timeMax.setHours(23, 59, 59);
@@ -558,6 +558,161 @@ const server = http.createServer(async (req, res) => {
 
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ ok: true, leads }));
+
+    } catch(e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: e.message }));
+    }
+    return;
+  }
+
+
+  // ─── /journey ─────────────────────────────────────────────────────────────
+  // מסע הליד: פנייה → שיחות → ייעוץ → STEP-UP → רכישה
+  if (req.url?.startsWith('/journey')) {
+    try {
+      const url = new URL(req.url, 'http://localhost');
+      const from = url.searchParams.get('from') || new Date(new Date().getFullYear(), 4, 1).toISOString().slice(0,10); // מאי 2026
+      const to   = url.searchParams.get('to')   || new Date().toISOString().slice(0,10);
+      const timeMin = new Date(from);
+      const timeMax = new Date(to); timeMax.setHours(23,59,59);
+
+      // שלוף לידים + updates במקביל עם STEP-UP + מכירות
+      const leadsQuery = `{
+        boards(ids: 9949694708) {
+          items_page(limit: 500) {
+            items {
+              id name created_at
+              column_values(ids: ["lead_status","date_mm00ds06","color_mkvd5y1g","lead_phone"]) { id text }
+              updates(limit: 30) { id body created_at }
+            }
+          }
+        }
+      }`;
+      const stepupQuery = `{
+        boards(ids: 9950584665) {
+          items_page(limit: 500) {
+            items { name column_values(ids: ["date4","lead_status"]) { id text } }
+          }
+        }
+      }`;
+      const salesQuery = `{
+        boards(ids: 9949694887) {
+          groups(ids: ["group_mm00znzx"]) {
+            items_page(limit: 500) {
+              items { name column_values(ids: ["deal_stage","date_mm00jx0c"]) { id text } }
+            }
+          }
+        }
+      }`;
+
+      const [leadsRes, stepupRes, salesRes, calEventsRaw] = await Promise.all([
+        fetchMonday(leadsQuery),
+        fetchMonday(stepupQuery),
+        fetchMonday(salesQuery),
+        getCalendarData(timeMin, timeMax),
+      ]);
+
+      const gv = (item, col) => item.column_values?.find(c => c.id === col)?.text || '';
+
+      // סנן לידים לפי טווח
+      const allLeads = leadsRes.data?.boards?.[0]?.items_page?.items || [];
+      const leads = allLeads.filter(item => {
+        const v = gv(item, 'date_mm00ds06');
+        const d = v ? new Date(v) : new Date(item.created_at);
+        return d >= timeMin && d <= timeMax;
+      });
+
+      // בנה מפות שם → נתונים
+      const stepupItems = stepupRes.data?.boards?.[0]?.items_page?.items || [];
+      const stepupMap = {}; // fullName/firstName → { date, status }
+      stepupItems.forEach(item => {
+        const d = gv(item, 'date4');
+        const date = d ? new Date(d.replace(' ','T')) : null;
+        stepupMap[item.name.trim().toLowerCase()] = { date, name: item.name };
+        stepupMap[item.name.trim().split(' ')[0].toLowerCase()] = { date, name: item.name };
+      });
+
+      const salesItems = salesRes.data?.boards?.[0]?.groups?.[0]?.items_page?.items || [];
+      const salesMap = {}; // name → { date, stage }
+      salesItems.forEach(item => {
+        const d = gv(item, 'date_mm00jx0c');
+        const stage = gv(item, 'deal_stage');
+        salesMap[item.name.trim().toLowerCase()] = { date: d ? new Date(d) : null, stage, name: item.name };
+        salesMap[item.name.trim().split(' ')[0].toLowerCase()] = { date: d ? new Date(d) : null, stage, name: item.name };
+      });
+
+      // אירועי ייעוץ מיומן — מפה לפי שם
+      const consultEvents = calEventsRaw.filter(e => e.type === 'ייעוץ');
+      const consultMap = {};
+      consultEvents.forEach(e => {
+        const key = e.client.trim().toLowerCase();
+        if (!consultMap[key]) consultMap[key] = [];
+        consultMap[key].push(e.start);
+        // גם שם פרטי
+        const first = e.client.trim().split(' ')[0].toLowerCase();
+        if (!consultMap[first]) consultMap[first] = [];
+        consultMap[first].push(e.start);
+      });
+
+      // בנה מסע לכל ליד
+      const journey = leads.map(item => {
+        const name = item.name;
+        const nameL = name.trim().toLowerCase();
+        const firstL = name.trim().split(' ')[0].toLowerCase();
+        const status = gv(item, 'lead_status');
+        const source = gv(item, 'color_mkvd5y1g');
+        const phone  = gv(item, 'lead_phone');
+        const dateStr = gv(item, 'date_mm00ds06');
+        const leadDate = dateStr ? new Date(dateStr) : new Date(item.created_at);
+
+        // שיחות מ-updates
+        const callUpdates = (item.updates || []).filter(u =>
+          u.body && (u.body.includes('שיחה נענתה') || u.body.includes('שיחה לא נענתה') || u.body.includes('ניסיון שיחה'))
+        );
+        callUpdates.sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+        const calls = callUpdates.map(u => {
+          const body = u.body || '';
+          const answered = body.includes('שיחה נענתה') && !body.includes('שיחה לא נענתה');
+          const incoming = body.includes('Caller is the Client');
+          let dur = 0;
+          const m = body.match(/משך זמן[^\d]*(\d+):(\d+)/);
+          if (m) dur = parseInt(m[1]) + parseInt(m[2])/60;
+          return { date: new Date(u.created_at).toLocaleDateString('he-IL'), answered, incoming, dur: Math.round(dur) };
+        });
+
+        // ייעוץ מיומן
+        const consultDates = (consultMap[nameL] || consultMap[firstL] || [])
+          .map(d => new Date(d).toLocaleDateString('he-IL'));
+
+        // STEP-UP
+        const su = stepupMap[nameL] || stepupMap[firstL] || null;
+
+        // רכישה
+        const sale = salesMap[nameL] || salesMap[firstL] || null;
+        const sold = sale?.stage === 'נמכר ליווי';
+
+        return {
+          id: item.id,
+          name,
+          phone,
+          source: source === 'Google' || source === 'Facebook' ? 'דף נחיתה פיסגה' : source,
+          leadDate: leadDate.toLocaleDateString('he-IL'),
+          leadDateRaw: leadDate.getTime(),
+          status,
+          calls,        // מערך שיחות
+          callCount: calls.length,
+          consult: consultDates,       // תאריכי ייעוץ
+          stepup: su ? su.date?.toLocaleDateString('he-IL') : null,
+          sold,
+          saleDate: sale?.date?.toLocaleDateString('he-IL') || null,
+        };
+      });
+
+      journey.sort((a,b) => b.leadDateRaw - a.leadDateRaw);
+
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: true, journey }));
 
     } catch(e) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
