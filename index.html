@@ -208,7 +208,7 @@ async function load(){
     if(!j.ok)throw new Error(j.error);
     data=j.data;
     document.getElementById('err').style.display='none';
-    if(range!=='calendar')render();
+    if(range!=='calendar'&&range!=='journey'&&range!=='comm')render();
     document.getElementById('upd').textContent='עודכן '+new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
   }catch(e){
     document.getElementById('err').style.display='block';
