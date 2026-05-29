@@ -13,7 +13,7 @@ const CALENDAR_ID_CONSULT = '96776edd0002b6adf80277d291cc40ca40f5c49b0e37f390226
 const BOARDS = {
   leads:    { id: 9949694708, cols: ['lead_status', 'color_mkvd5y1g', 'date_mm00ds06'] },
   sales:    { id: 9949694887, cols: ['deal_stage', 'date_mm00jx0c'] },
-  stepup:   { id: 9950584665, cols: ['lead_status', 'date4', 'lookup_mm3tj2'] },
+  stepup:   { id: 9950584665, cols: ['lead_status', 'date4'] },
   coaching: { id: 9949694755, cols: ['status', 'numeric_mky8ze04'] },
   sessions: { id: 9950821064, cols: ['status'] },
 };
@@ -438,11 +438,17 @@ const server = http.createServer(async (req, res) => {
       const serviceCount = calEvents.filter(e => e.type === 'שירות').length;
       const coachingCount = calEvents.filter(e => e.type === 'ליווי').length;
 
-      // STEP-UP לפי מקור — מבורד STEP-UP עם עמודת lookup_mm3tj2
+      // STEP-UP לפי מקור — מתאים לפי שם לבורד לידים (mirror column לא עובד ב-API)
+      const leadsSourceMap = {};
+      (mondayData.leads || []).forEach(i => {
+        let src = gv(i, 'color_mkvd5y1g') || 'שונות';
+        if (src === 'Google' || src === 'Facebook') src = 'דף נחיתה פיסגה';
+        leadsSourceMap[i.name.trim().toLowerCase()] = src;
+      });
       const stepupBySource = {};
       stepupMonday.forEach(i => {
-        let src = gv(i, 'lookup_mm3tj2') || 'שונות';
-        if (src === 'Google' || src === 'Facebook') src = 'דף נחיתה פיסגה';
+        const nameL = i.name.trim().toLowerCase();
+        const src = leadsSourceMap[nameL] || 'שונות';
         if (!stepupBySource[src]) stepupBySource[src] = 0;
         stepupBySource[src]++;
       });
