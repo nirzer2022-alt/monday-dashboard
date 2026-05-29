@@ -300,7 +300,7 @@ async function render(){
     '</div>'+
     '<div class="row2">'+
     '<div class="card"><div class="card-title">משפך המרה</div><div id="funnelDiv">טוען...</div></div>'+
-    '<div class="card"><div class="card-title">פירוט מקורות</div>'+srcTable(sm,0)+'</div>'+
+    '<div class="card"><div class="card-title">פירוט מקורות</div>'+srcTable(sm,0,{})+'</div>'+
     '</div>'+
     '<div class="card" style="margin-bottom:12px"><div class="card-title">ליוויים פעילים</div>'+coach('/coaching?from='+dates.from+'&to='+dates.to)+'</div>';
 
@@ -336,7 +336,7 @@ async function render(){
     const smFull={};SRC.forEach(s=>smFull[s.key]={c:0,a:0,su:0,sold:0});
     L.forEach(i=>{const s=normSource(gv(i,'color_mkvd5y1g'));if(!smFull[s])smFull[s]={c:0,a:0,su:0,sold:0};smFull[s].c++;if(ADV.includes(gv(i,'lead_status')))smFull[s].a++;});
     var srcEl=document.querySelector('.card .card-title + table');
-    if(srcEl&&srcEl.parentElement){srcEl.parentElement.innerHTML='<div class="card-title">פירוט מקורות</div>'+srcTable(smFull,contact);}
+    if(srcEl&&srcEl.parentElement){srcEl.parentElement.innerHTML='<div class="card-title">פירוט מקורות</div>'+srcTable(smFull,contact,j.stepupBySource||{});}
 
     // עדכן משפך
     el=document.getElementById('funnelDiv');if(el)el.innerHTML=funnel(contact,adv,su,sold);
@@ -373,12 +373,14 @@ function funnel(contact,adv,su,sold){
   return h;
 }
 
-function srcTable(sm,total){
+function srcTable(sm,total,sbs){
+  sbs=sbs||{};
   let rows='';
   SRC.forEach(function(s){
     const d=sm[s.key]||{c:0,a:0,su:0,sold:0};
     const pt=total>0?Math.round(d.c/total*100):0;
     const pa=d.c>0?Math.round(d.a/d.c*100):0;
+    const suCount=sbs[s.key]||0;
     const cv=d.c>0?Math.round(d.sold/d.c*100):0;
     const cc=cv>=30?'color:#16a34a;background:#dcfce7':cv>=15?'color:#d97706;background:#fef3c7':'color:#dc2626;background:#fee2e2';
     rows+='<tr>'+
@@ -386,10 +388,11 @@ function srcTable(sm,total){
       '<div class="src-bar-wrap" style="width:80px;margin-top:3px"><div class="src-bar" style="width:'+pt+'%;background:'+s.color+'"></div></div></td>'+
       '<td style="text-align:center;font-weight:600">'+d.c+'<div style="font-size:10px;color:#9ca3af">'+pt+'%</div></td>'+
       '<td style="text-align:center">'+d.a+'<div style="font-size:10px;color:#9ca3af">'+pa+'%</div></td>'+
+      '<td style="text-align:center;font-weight:600;color:#d97706">'+suCount+'</td>'+
       '<td style="text-align:center;font-weight:700">'+d.sold+'</td>'+
       '<td style="text-align:center"><span class="badge" style="'+cc+'">'+cv+'%</span></td></tr>';
   });
-  return '<table><tr><th>מקור</th><th style="text-align:center">קשר</th><th style="text-align:center">ייעוץ</th><th style="text-align:center">ליווי</th><th style="text-align:center">המרה</th></tr>'+rows+'</table>';
+  return '<table><tr><th>מקור</th><th style="text-align:center">קשר</th><th style="text-align:center">ייעוץ</th><th style="text-align:center">STEP-UP</th><th style="text-align:center">ליווי</th><th style="text-align:center">המרה</th></tr>'+rows+'</table>';
 }
 
 function coach(coachingUrl){
