@@ -13,7 +13,7 @@ const CALENDAR_ID_CONSULT = '96776edd0002b6adf80277d291cc40ca40f5c49b0e37f390226
 const BOARDS = {
   leads:    { id: 9949694708, cols: ['lead_status', 'color_mkvd5y1g', 'date_mm00ds06'] },
   sales:    { id: 9949694887, cols: ['deal_stage', 'date_mm00jx0c'] },
-  stepup:   { id: 9950584665, cols: ['lead_status', 'date4'] },
+  stepup:   { id: 9950584665, cols: ['lead_status', 'date4', 'lookup_mm3tj2'] },
   coaching: { id: 9949694755, cols: ['status', 'numeric_mky8ze04'] },
   sessions: { id: 9950821064, cols: ['status'] },
 };
@@ -438,17 +438,27 @@ const server = http.createServer(async (req, res) => {
       const serviceCount = calEvents.filter(e => e.type === 'שירות').length;
       const coachingCount = calEvents.filter(e => e.type === 'ליווי').length;
 
+      // STEP-UP לפי מקור — מבורד STEP-UP עם עמודת lookup_mm3tj2
+      const stepupBySource = {};
+      stepupMonday.forEach(i => {
+        let src = gv(i, 'lookup_mm3tj2') || 'שונות';
+        if (src === 'Google' || src === 'Facebook') src = 'דף נחיתה פיסגה';
+        if (!stepupBySource[src]) stepupBySource[src] = 0;
+        stepupBySource[src]++;
+      });
+
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({
         ok: true,
         range: { from: timeMin.toISOString(), to: timeMax.toISOString() },
         leads: leads.length,
-        advCount,       // שיחות ייעוץ מיומן
-        stepupCount,    // פגישות STEP-UP מיומן
-        stepupMonday: stepupMonday.length, // STEP-UP ממאנדיי (להשוואת חודשים)
-        sold,           // רכישות ליווי
-        serviceCount,   // שיחות שירות מיומן
-        coachingCount,  // פגישות ליווי מיומן
+        advCount,
+        stepupCount,
+        stepupMonday: stepupMonday.length,
+        stepupBySource,  // STEP-UP לפי מקור
+        sold,
+        serviceCount,
+        coachingCount,
       }));
     } catch(e) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
