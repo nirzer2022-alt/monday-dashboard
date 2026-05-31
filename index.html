@@ -391,9 +391,10 @@ function srcTable(sm,total,sbs,soldBS){
       '<td style="text-align:center;font-weight:600">'+d.c+'<div style="font-size:10px;color:#9ca3af">'+pt+'%</div></td>'+
       '<td style="text-align:center">'+d.a+'<div style="font-size:10px;color:#9ca3af">'+pa+'%</div></td>'+
       '<td style="text-align:center;font-weight:600;color:#d97706">'+suCount+'<div style="font-size:10px;color:#9ca3af">'+(d.c>0?Math.round(suCount/d.c*100):0)+'%</div></td>'+
+      '<td style="text-align:center;font-weight:700;color:#7c3aed">'+soldCount+'<div style="font-size:10px;color:#9ca3af">'+(suCount>0?Math.round(soldCount/suCount*100):0)+'% מ-S-UP</div></td>'+
       '<td style="text-align:center"><span class="badge" style="'+cc+'">'+cv+'%</span></td></tr>';
   });
-  return '<table><tr><th>מקור</th><th style="text-align:center">קשר</th><th style="text-align:center">ייעוץ</th><th style="text-align:center">STEP-UP</th><th style="text-align:center">המרה</th></tr>'+rows+'</table>';
+  return '<table><tr><th>מקור</th><th style="text-align:center">קשר</th><th style="text-align:center">ייעוץ</th><th style="text-align:center">STEP-UP</th><th style="text-align:center">ליווי</th><th style="text-align:center">המרה</th></tr>'+rows+'</table>';
 }
 
 function coach(coachingUrl){
