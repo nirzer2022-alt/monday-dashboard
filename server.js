@@ -12,7 +12,7 @@ const CALENDAR_ID_CONSULT = '96776edd0002b6adf80277d291cc40ca40f5c49b0e37f390226
 
 const BOARDS = {
   leads:    { id: 9949694708, cols: ['lead_status', 'color_mkvd5y1g', 'date_mm00ds06'] },
-  sales:    { id: 9949694887, cols: ['deal_stage', 'date_mm00jx0c'] },
+  sales:    { id: 9949694887, cols: ['deal_stage', 'date_mm00jx0c', 'color_mkvdnz23'] },
   stepup:   { id: 9950584665, cols: ['lead_status', 'date4', 'dropdown_mm3w3bgt'] },
   coaching: { id: 9949694755, cols: ['status', 'numeric_mky8ze04'] },
   sessions: { id: 9950821064, cols: ['status'] },
@@ -432,6 +432,15 @@ const server = http.createServer(async (req, res) => {
       });
       const sold = sales.filter(i => gv(i, 'deal_stage') === 'נמכר ליווי').length;
 
+      // נמכר ליווי לפי מקור — מעמודת color_mkvdnz23 בבורד מכירות
+      const soldBySource = {};
+      sales.filter(i => gv(i, 'deal_stage') === 'נמכר ליווי').forEach(i => {
+        let src = gv(i, 'color_mkvdnz23') || 'שונות';
+        if (src === 'Google' || src === 'Facebook') src = 'דף נחיתה פיסגה';
+        if (!soldBySource[src]) soldBySource[src] = 0;
+        soldBySource[src]++;
+      });
+
       // יומן — כבר מסונן לפי timeMin/timeMax מהשרת
       const advCount    = calEvents.filter(e => e.type === 'ייעוץ').length;
       const stepupCount = calEvents.filter(e => e.type === 'step-up').length;
@@ -456,6 +465,7 @@ const server = http.createServer(async (req, res) => {
         stepupCount,
         stepupMonday: stepupMonday.length,
         stepupBySource,  // STEP-UP לפי מקור
+        soldBySource,    // נמכר ליווי לפי מקור
         sold,
         serviceCount,
         coachingCount,
