@@ -621,7 +621,7 @@ const server = http.createServer(async (req, res) => {
         }
       }`;
       // שלוף גם קבוצת "נמכר ליווי" מבורד STEP-UP
-      const stepupSoldQuery = \`{
+      const stepupSoldQuery = `{
         boards(ids: 9950584665) {
           groups(ids: ["group_mkvdgsnn"]) {
             items_page(limit: 500) {
@@ -632,7 +632,7 @@ const server = http.createServer(async (req, res) => {
             }
           }
         }
-      }\`;
+      }`;
       const salesQuery = `{
         boards(ids: 9949694887) {
           groups(ids: ["group_mm00znzx", "new_group29179"]) {
