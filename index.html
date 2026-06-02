@@ -507,12 +507,20 @@ async function commTab(days){
       'לא ידוע':'background:#f3f4f6;color:#6b7280',
     };
     const btnStyle=(d)=>commDays===d?'background:#2563eb;color:#fff;border-color:#2563eb':'';
+    // פילטר סטטוס
+    const allStatuses = ['הכל','לא טופל','נקבעה שיחה','לא ענה','שיחה קצרה','פספסנו','טופל'];
+    const commStatusFilter = window._commStatusFilter || 'הכל';
+    const filteredLeads = commStatusFilter === 'הכל' ? leads : leads.filter(l => l.callStatus === commStatusFilter);
+
     let html=
-      '<div style="display:flex;gap:6px;margin-bottom:16px">'+
+      '<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">'+
       '<button class="btn" style="'+btnStyle(7)+'" onclick="commTab(7)">שבוע אחרון</button>'+
       '<button class="btn" style="'+btnStyle(14)+'" onclick="commTab(14)">שבועיים</button>'+
       '<button class="btn" style="'+btnStyle(30)+'" onclick="commTab(30)">חודש אחרון</button>'+
       '<button class="btn" style="'+btnStyle(60)+'" onclick="commTab(60)">60 יום</button>'+
+      '</div>'+
+      '<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">'+
+      allStatuses.map(s=>'<button class="btn" style="'+(commStatusFilter===s?'background:#2563eb;color:#fff;border-color:#2563eb':'')+'" onclick="window._commStatusFilter=''+s+'';commTab()">'+s+'</button>').join('')+
       '</div>'+
       '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px">'+
       '<div class="mc"><div class="mc-label">סה"כ לידים</div><div class="mc-value c-blue">'+total+'</div></div>'+
@@ -525,7 +533,7 @@ async function commTab(days){
       '<div class="card"><div class="card-title">מעקב טיפול בליד נכנס</div>'+
       '<table><tr><th>שם</th><th>טלפון</th><th>תאריך פנייה</th><th>מקור</th>'+
       '<th style="text-align:center">שיחות</th><th>שיחה אחרונה</th><th style="text-align:center">סטטוס</th></tr>';
-    leads.forEach(function(l){
+    filteredLeads.forEach(function(l){
       var sc=statusColor[l.callStatus]||'';
       html+='<tr>'+
         '<td style="font-weight:600">'+l.name+'</td>'+
