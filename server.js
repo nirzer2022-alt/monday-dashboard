@@ -612,13 +612,30 @@ const server = http.createServer(async (req, res) => {
       const stepupQuery = `{
         boards(ids: 9950584665) {
           items_page(limit: 500) {
-            items { name column_values(ids: ["date4","lead_status"]) { id text } }
+            items {
+              id name created_at
+              column_values(ids: ["date4","lead_status","dropdown_mm3w3bgt","lead_phone","status"]) { id text }
+              updates(limit: 30) { id body created_at }
+            }
           }
         }
       }`;
+      // שלוף גם קבוצת "נמכר ליווי" מבורד STEP-UP
+      const stepupSoldQuery = \`{
+        boards(ids: 9950584665) {
+          groups(ids: ["group_mkvdgsnn"]) {
+            items_page(limit: 500) {
+              items {
+                id name created_at
+                column_values(ids: ["date4","lead_status","dropdown_mm3w3bgt","lead_phone","status","date_mm00jx0c"]) { id text }
+              }
+            }
+          }
+        }
+      }\`;
       const salesQuery = `{
         boards(ids: 9949694887) {
-          groups(ids: ["group_mm00znzx"]) {
+          groups(ids: ["group_mm00znzx", "new_group29179"]) {
             items_page(limit: 500) {
               items { name column_values(ids: ["deal_stage","date_mm00jx0c"]) { id text } }
             }
@@ -626,38 +643,71 @@ const server = http.createServer(async (req, res) => {
         }
       }`;
 
-      const [leadsRes, stepupRes, salesRes, calEventsRaw] = await Promise.all([
+      const [leadsRes, stepupRes, salesRes, stepupSoldRes, calEventsRaw] = await Promise.all([
         fetchMonday(leadsQuery),
         fetchMonday(stepupQuery),
         fetchMonday(salesQuery),
+        fetchMonday(stepupSoldQuery),
         getCalendarData(timeMin, timeMax),
       ]);
 
       const gv = (item, col) => item.column_values?.find(c => c.id === col)?.text || '';
 
-      // סנן לידים לפי טווח
+      // סנן לידים מבורד לידים לפי טווח
       const allLeads = leadsRes.data?.boards?.[0]?.items_page?.items || [];
-      const leads = allLeads.filter(item => {
+      const leadsFiltered = allLeads.filter(item => {
         const v = gv(item, 'date_mm00ds06');
         const d = v ? new Date(v) : new Date(item.created_at);
         return d >= timeMin && d <= timeMax;
       });
 
+      // הוסף פריטים מ-STEP-UP שלא קיימים בלידים (לפי שם)
+      const stepupItemsAll = stepupRes.data?.boards?.[0]?.items_page?.items || [];
+      const existingNames = new Set(leadsFiltered.map(i => i.name.trim().toLowerCase()));
+      const stepupOnlyItems = stepupItemsAll.filter(item => {
+        const nameL = item.name.trim().toLowerCase();
+        if (existingNames.has(nameL)) return false; // כבר קיים בלידים
+        // סנן לפי תאריך פגישה (date4) בטווח
+        const v = gv(item, 'date4');
+        const d = v ? new Date(v.replace(' ','T')) : new Date(item.created_at);
+        return d >= timeMin && d <= timeMax;
+      }).map(item => ({
+        // המר לפורמט של ליד
+        ...item,
+        _fromStepup: true,
+        column_values: [
+          ...item.column_values,
+          { id: 'date_mm00ds06', text: gv(item, 'date4') }, // תאריך פגישה כתאריך פנייה
+          { id: 'color_mkvd5y1g', text: gv(item, 'dropdown_mm3w3bgt') }, // מקור
+        ]
+      }));
+
+      const leads = [...leadsFiltered, ...stepupOnlyItems];
+
       // בנה מפות שם → נתונים
-      const stepupItems = stepupRes.data?.boards?.[0]?.items_page?.items || [];
       const stepupMap = {}; // שם מלא בלבד — מניעת התאמה שגויה לפי שם פרטי
-      stepupItems.forEach(item => {
+      stepupItemsAll.forEach(item => {
         const d = gv(item, 'date4');
         const date = d ? new Date(d.replace(' ','T')) : null;
         stepupMap[item.name.trim().toLowerCase()] = { date, name: item.name };
       });
 
-      const salesItems = salesRes.data?.boards?.[0]?.groups?.[0]?.items_page?.items || [];
+      // מכירות מבורד מכירות
+      const salesGroups = salesRes.data?.boards?.[0]?.groups || [];
+      const salesItems = salesGroups.flatMap(g => g.items_page?.items || []);
       const salesMap = {}; // שם מלא בלבד — מניעת התאמה שגויה לפי שם פרטי
       salesItems.forEach(item => {
         const d = gv(item, 'date_mm00jx0c');
         const stage = gv(item, 'deal_stage');
         salesMap[item.name.trim().toLowerCase()] = { date: d ? new Date(d) : null, stage, name: item.name };
+      });
+      // מכירות מבורד STEP-UP (קבוצת נמכר ליווי) — רק אם לא קיים כבר מבורד מכירות
+      const stepupSoldItems = stepupSoldRes.data?.boards?.[0]?.groups?.[0]?.items_page?.items || [];
+      stepupSoldItems.forEach(item => {
+        const nameL = item.name.trim().toLowerCase();
+        if (salesMap[nameL]) return; // כבר קיים מבורד מכירות — דלג
+        const d = gv(item, 'date4');
+        salesMap[nameL] = { date: d ? new Date(d.replace(' ','T')) : null, stage: 'נמכר ליווי', name: item.name };
       });
 
       // אירועי ייעוץ מיומן — מפה לפי שם
