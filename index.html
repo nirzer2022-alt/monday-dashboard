@@ -483,6 +483,7 @@ async function cmp(){
 
 // ── תקשורת ────────────────────────────────────────────────────────────────
 var commDays=14;
+function setCommFilter(s){window._commStatusFilter=s;commTab();}
 async function commTab(days){
   if(days)commDays=days;
   document.getElementById('content').innerHTML='<div style="text-align:center;padding:30px;color:#6b7280">טוען נתוני תקשורת...</div>';
@@ -508,9 +509,10 @@ async function commTab(days){
     };
     const btnStyle=(d)=>commDays===d?'background:#2563eb;color:#fff;border-color:#2563eb':'';
     // פילטר סטטוס
+    // פילטר סטטוס
     const allStatuses = ['הכל','לא טופל','נקבעה שיחה','לא ענה','שיחה קצרה','פספסנו','טופל'];
     const commStatusFilter = window._commStatusFilter || 'הכל';
-    const filteredLeads = commStatusFilter === 'הכל' ? leads : leads.filter(l => l.callStatus === commStatusFilter);
+    const filteredLeads = commStatusFilter === 'הכל' ? leads : leads.filter(function(l){return l.callStatus === commStatusFilter;});
 
     let html=
       '<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">'+
@@ -520,7 +522,10 @@ async function commTab(days){
       '<button class="btn" style="'+btnStyle(60)+'" onclick="commTab(60)">60 יום</button>'+
       '</div>'+
       '<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">'+
-      allStatuses.map(s=>'<button class="btn" style="'+(commStatusFilter===s?'background:#2563eb;color:#fff;border-color:#2563eb':'')+'" onclick="window._commStatusFilter=''+s+'';commTab()">'+s+'</button>').join('')+
+      allStatuses.map(function(s){
+        var active = commStatusFilter===s ? 'background:#2563eb;color:#fff;border-color:#2563eb' : '';
+        return '<button class="btn" style="'+active+'" onclick="setCommFilter(\'' + s + '\')">' + s + '</button>';
+      }).join('')+
       '</div>'+
       '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px">'+
       '<div class="mc"><div class="mc-label">סה"כ לידים</div><div class="mc-value c-blue">'+total+'</div></div>'+
