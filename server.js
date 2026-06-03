@@ -749,8 +749,15 @@ const server = http.createServer(async (req, res) => {
         const consultDates = (consultMap[nameL] || [])
           .map(d => new Date(d).toLocaleDateString('he-IL'));
 
-        // STEP-UP — שם מלא בלבד
-        const su = stepupMap[nameL] || null;
+        // STEP-UP — מהיומן בלבד (אמין יותר מהבורד — פגישות מבוטלות לא מופיעות)
+        const calStepup = calEventsRaw.filter(e =>
+          e.type === 'step-up' &&
+          (e.client.trim().toLowerCase() === nameL ||
+           e.client.trim().toLowerCase() === name.trim().split(' ')[0].toLowerCase())
+        );
+        const su = calStepup.length > 0
+          ? { date: new Date(calStepup[0].start), name }
+          : null;
 
         // רכישה — שם מלא בלבד
         const sale = salesMap[nameL] || null;
