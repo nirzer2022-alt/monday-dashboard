@@ -756,7 +756,7 @@ async function journeyTab(from, to) {
     function buildTable(rows, title, color) {
       if (!rows.length) return '';
       let h = '<div class="section-header" style="color:'+color+'">'+title+' ('+rows.length+')</div>';
-      h += '<div class="card" style="margin-bottom:16px;padding:0;overflow:auto">' +
+      h += '<div class="card" style="margin-bottom:16px;padding:0;overflow-x:auto;width:100%">' +
            '<table class="journey-table"><tr>' +
            '<th>שם</th><th>תאריך פנייה</th><th>מקור</th><th style="text-align:center">שיחות</th>' +
            '<th style="text-align:center">ייעוץ</th><th style="text-align:center">STEP-UP</th>' +
