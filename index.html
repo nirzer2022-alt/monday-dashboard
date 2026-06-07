@@ -79,9 +79,9 @@ tr:last-child td{border-bottom:none;}
 .client-stat-lbl{font-size:10px;color:var(--text3);}
 .custom-range{display:flex;gap:8px;align-items:center;margin-right:8px;}
 .custom-range input[type=date]{border:1px solid var(--border);border-radius:8px;padding:5px 8px;font-size:12px;font-family:'Heebo',sans-serif;background:var(--bg2);color:var(--text);}
-.journey-table{width:100%;border-collapse:collapse;font-size:12px;}
+.journey-table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;}
 .journey-table th{text-align:right;color:var(--text3);font-weight:500;padding:8px 6px;border-bottom:2px solid var(--border);font-size:11px;white-space:nowrap;}
-.journey-table td{padding:8px 6px;border-bottom:1px solid var(--bg3);vertical-align:top;}
+.journey-table td{padding:8px 6px;border-bottom:1px solid var(--bg3);vertical-align:top;overflow:hidden;text-overflow:ellipsis;}
 .journey-table tr:last-child td{border-bottom:none;}
 .journey-table tr:hover td{background:#fafafa;}
 .step-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:4px;}
@@ -758,9 +758,9 @@ async function journeyTab(from, to) {
       let h = '<div class="section-header" style="color:'+color+'">'+title+' ('+rows.length+')</div>';
       h += '<div class="card" style="margin-bottom:16px;padding:0;overflow-x:auto;width:100%">' +
            '<table class="journey-table"><tr>' +
-           '<th>שם</th><th>תאריך פנייה</th><th>מקור</th><th style="text-align:center">שיחות</th>' +
-           '<th style="text-align:center">ייעוץ</th><th style="text-align:center">STEP-UP</th>' +
-           '<th style="text-align:center">רכישה</th><th>סטטוס</th></tr>';
+           '<th style="width:18%">שם</th><th style="width:12%">תאריך פנייה</th><th style="width:14%">מקור</th><th style="text-align:center;width:10%">שיחות</th>' +
+           '<th style="text-align:center;width:10%">ייעוץ</th><th style="text-align:center;width:10%">STEP-UP</th>' +
+           '<th style="text-align:center;width:10%">רכישה</th><th style="width:16%">סטטוס</th></tr>';
       rows.forEach(function(l) {
         var sc = statusColor[l.status] || 'background:#f3f4f6;color:#6b7280';
         var consultStr = l.consult.length
