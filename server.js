@@ -628,7 +628,6 @@ const server = http.createServer(async (req, res) => {
               items {
                 id name created_at
                 column_values(ids: ["date4","lead_status","dropdown_mm3w3bgt","lead_phone","status","date_mm00jx0c"]) { id text }
-                activity_logs(limit: 10) { id event data created_at }
               }
             }
           }
@@ -707,30 +706,9 @@ const server = http.createServer(async (req, res) => {
       stepupSoldItems.forEach(item => {
         const nameL = item.name.trim().toLowerCase();
         if (salesMap[nameL]) return; // כבר קיים מבורד מכירות — דלג
-        // תאריך רכישה = מה-activity_log (מתי עבר לקבוצת נמכר ליווי)
-        let saleDate = null;
-        if (item.activity_logs && item.activity_logs.length > 0) {
-          // activity_log מסודר מהחדש לישן — נחפש העברה לקבוצה
-          for (const log of item.activity_logs) {
-            try {
-              const logData = JSON.parse(log.data || '{}');
-              if (log.event === 'move_to_board' || log.event === 'move_pulse_into_group' || logData.dest_group_id === 'group_mkvdgsnn') {
-                saleDate = new Date(parseInt(log.created_at));
-                break;
-              }
-            } catch(e) {}
-          }
-          // אם לא מצא אירוע ספציפי — קח את ה-log הישן ביותר (מתי נוצר בקבוצה)
-          if (!saleDate) {
-            const oldest = item.activity_logs[item.activity_logs.length - 1];
-            saleDate = new Date(parseInt(oldest.created_at));
-          }
-        }
-        // fallback ל-date4 אם אין activity_log
-        if (!saleDate) {
-          const d = gv(item, 'date4');
-          saleDate = d ? new Date(d.replace(' ','T')) : null;
-        }
+        // תאריך רכישה = created_at של הפריט (מתי נוצר/הועבר לקבוצה)
+        // activity_logs לא נתמך ישירות ב-items, נשתמש ב-created_at כקירוב
+        let saleDate = new Date(item.created_at);
         salesMap[nameL] = { date: saleDate, stage: 'נמכר ליווי', name: item.name };
       });
 
