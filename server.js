@@ -18,12 +18,36 @@ const BOARDS = {
   sessions: { id: 9950821064, cols: ['status'] },
 };
 
-function mondayQuery(boardId, cols, cursor) {
+function mondayQuery(boardId, cols, cursor, groupId) {
   const colsStr = cols.map(c => `"${c}"`).join(', ');
   if (cursor) {
     return `{ next_items_page(limit: 500, cursor: "${cursor}") { cursor items { name column_values(ids: [${colsStr}]) { id text } created_at } } }`;
   }
+  if (groupId) {
+    return `{ boards(ids: ${boardId}) { groups(ids: ["${groupId}"]) { items_page(limit: 500) { cursor items { name column_values(ids: [${colsStr}]) { id text } created_at } } } } }`;
+  }
   return `{ boards(ids: ${boardId}) { items_page(limit: 500) { cursor items { name column_values(ids: [${colsStr}]) { id text } created_at } } } }`;
+}
+
+async function fetchAllItemsFromGroup(boardId, cols, groupId) {
+  const items = [];
+  let cursor = null;
+  let page = 0;
+  do {
+    const query = mondayQuery(boardId, cols, cursor, cursor ? null : groupId);
+    const res = await fetchMonday(query);
+    let pageData;
+    if (cursor) {
+      pageData = res.data?.next_items_page;
+    } else {
+      pageData = res.data?.boards?.[0]?.groups?.[0]?.items_page;
+    }
+    if (!pageData) break;
+    items.push(...(pageData.items || []));
+    cursor = pageData.cursor || null;
+    page++;
+  } while (cursor && page < 10);
+  return items;
 }
 
 async function fetchAllItems(boardId, cols) {
@@ -81,7 +105,53 @@ async function getAllData() {
       return [key, items];
     })
   );
-  return Object.fromEntries(results);
+  const data = Object.fromEntries(results);
+
+  // שלוף לידים מכל הקבוצות הנוספות ואחד
+  const extraGroups = [
+    // בורד לידים
+    { boardId: 9949694708, groupId: 'topics',          cols: BOARDS.leads.cols },
+    { boardId: 9949694708, groupId: 'group_mkvdgh99',  cols: BOARDS.leads.cols },
+    { boardId: 9949694708, groupId: 'group_mkvdf40s',  cols: BOARDS.leads.cols },
+    // בורד מכירות
+    { boardId: 9949694887, groupId: 'topics',          cols: BOARDS.sales.cols },
+    { boardId: 9949694887, groupId: 'group_mm00znzx',  cols: BOARDS.sales.cols },
+    { boardId: 9949694887, groupId: 'group_mkvdygwq',  cols: BOARDS.sales.cols },
+    { boardId: 9949694887, groupId: 'group_mkvdkfy5',  cols: BOARDS.sales.cols },
+    { boardId: 9949694887, groupId: 'group_mkvdp5xy',  cols: BOARDS.sales.cols },
+    { boardId: 9949694887, groupId: 'closed',          cols: BOARDS.sales.cols },
+    // בורד STEP-UP
+    { boardId: 9950584665, groupId: 'topics',          cols: BOARDS.stepup.cols },
+    { boardId: 9950584665, groupId: 'group_mm00znzx',  cols: BOARDS.stepup.cols },
+    { boardId: 9950584665, groupId: 'group_mkvdgsnn',  cols: BOARDS.stepup.cols },
+    { boardId: 9950584665, groupId: 'group_mkvdy8rm',  cols: BOARDS.stepup.cols },
+    { boardId: 9950584665, groupId: 'group_mkvdjhsc',  cols: BOARDS.stepup.cols },
+    { boardId: 9950584665, groupId: 'group_title',     cols: BOARDS.stepup.cols },
+  ];
+
+  try {
+    const extraResults = await Promise.all(
+      extraGroups.map(g => fetchAllItemsFromGroup(g.boardId, g.cols, g.groupId))
+    );
+    const allExtraItems = extraResults.flat();
+    const existingNames = new Set((data.leads || []).map(i => i.name.trim().toLowerCase()));
+    allExtraItems.forEach(i => {
+      const n = i.name.trim().toLowerCase();
+      if (!existingNames.has(n)) {
+        existingNames.add(n);
+        // הוסף עם date_mm00ds06 מ-created_at אם חסר
+        if (!i.column_values?.find(c => c.id === 'date_mm00ds06' && c.text)) {
+          i.column_values = i.column_values || [];
+          i.column_values.push({ id: 'date_mm00ds06', text: i.created_at?.slice(0,16).replace('T',' ') || '' });
+        }
+        data.leads.push(i);
+      }
+    });
+  } catch(e) {
+    console.error('Error fetching extra groups:', e.message);
+  }
+
+  return data;
 }
 
 function base64url(str) {
@@ -848,6 +918,22 @@ const server = http.createServer(async (req, res) => {
     } catch(e) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ ok: false, error: e.message }));
+    }
+    return;
+  }
+
+  // ─── /debug-leads
+  if (req.url?.startsWith('/debug-leads')) {
+    try {
+      const items = await fetchAllItems(9949694708, ['lead_status', 'date_mm00ds06']);
+      const june = items.filter(i => {
+        const v = (i.column_values?.find(c => c.id === 'date_mm00ds06')?.text || '');
+        return v.startsWith('2026-06');
+      });
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ total: items.length, june: june.length, juneNames: june.map(i => i.name) }));
+    } catch(e) {
+      res.writeHead(500); res.end(JSON.stringify({ error: e.message }));
     }
     return;
   }
