@@ -18,9 +18,33 @@ const BOARDS = {
   sessions: { id: 9950821064, cols: ['status'] },
 };
 
-function mondayQuery(boardId, cols) {
+function mondayQuery(boardId, cols, cursor) {
   const colsStr = cols.map(c => `"${c}"`).join(', ');
-  return `{ boards(ids: ${boardId}) { items_page(limit: 500) { items { name column_values(ids: [${colsStr}]) { id text } created_at } } } }`;
+  if (cursor) {
+    return `{ next_items_page(limit: 500, cursor: "${cursor}") { cursor items { name column_values(ids: [${colsStr}]) { id text } created_at } } }`;
+  }
+  return `{ boards(ids: ${boardId}) { items_page(limit: 500) { cursor items { name column_values(ids: [${colsStr}]) { id text } created_at } } } }`;
+}
+
+async function fetchAllItems(boardId, cols) {
+  const items = [];
+  let cursor = null;
+  let page = 0;
+  do {
+    const query = mondayQuery(boardId, cols, cursor);
+    const res = await fetchMonday(query);
+    let pageData;
+    if (cursor) {
+      pageData = res.data?.next_items_page;
+    } else {
+      pageData = res.data?.boards?.[0]?.items_page;
+    }
+    if (!pageData) break;
+    items.push(...(pageData.items || []));
+    cursor = pageData.cursor || null;
+    page++;
+  } while (cursor && page < 10); // מקסימום 5000 פריטים
+  return items;
 }
 
 function fetchMonday(query) {
@@ -53,8 +77,8 @@ function fetchMonday(query) {
 async function getAllData() {
   const results = await Promise.all(
     Object.entries(BOARDS).map(async ([key, b]) => {
-      const res = await fetchMonday(mondayQuery(b.id, b.cols));
-      return [key, res.data?.boards?.[0]?.items_page?.items || []];
+      const items = await fetchAllItems(b.id, b.cols);
+      return [key, items];
     })
   );
   return Object.fromEntries(results);
