@@ -608,20 +608,15 @@ const server = http.createServer(async (req, res) => {
   // ─── /comm ────────────────────────────────────────────────────────────────
   if (req.url?.startsWith('/comm')) {
     try {
+      const allLeadGroups = ["topics", "group_mky8hb65", "group_mkvdgh99", "group_mkvdf40s"];
+      const cols = ["lead_status", "date_mm00ds06", "color_mkvd5y1g", "lead_phone"];
+      const itemsField = `id name created_at column_values(ids: ["lead_status", "date_mm00ds06", "color_mkvd5y1g", "lead_phone"]) { id text } updates(limit: 20) { id body created_at }`;
       const leadsQuery = `{
         boards(ids: 9949694708) {
-          groups(ids: ["topics", "group_mky8hb65"]) {
+          groups(ids: ${JSON.stringify(allLeadGroups)}) {
             items_page(limit: 500) {
               items {
-                id
-                name
-                created_at
-                column_values(ids: ["lead_status", "date_mm00ds06", "color_mkvd5y1g", "lead_phone"]) { id text }
-                updates(limit: 20) {
-                  id
-                  body
-                  created_at
-                }
+                ${itemsField}
               }
             }
           }
