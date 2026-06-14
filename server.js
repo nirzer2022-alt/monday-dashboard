@@ -414,10 +414,44 @@ const server = http.createServer(async (req, res) => {
       const gv = (item, col) => item.column_values?.find(c => c.id === col)?.text || '';
 
       // לידים — לפי date_mm00ds06
-      const leads = (mondayData.leads || []).filter(i => {
+      // לידים מבורד לידים לפי date_mm00ds06
+      const leadsFromBoard = (mondayData.leads || []).filter(i => {
         const v = gv(i, 'date_mm00ds06');
         return v && inRange(v);
       });
+
+      // לידים מ-STEP-UP לפי created_at (אין date_mm00ds06)
+      const leadsFromStepup = (mondayData.stepup || []).filter(i => {
+        return inRange(i.created_at);
+      });
+
+      // לידים ממכירות לפי date_mm00jx0c
+      const leadsFromSales = (mondayData.sales || []).filter(i => {
+        const v = gv(i, 'date_mm00jx0c');
+        return v && inRange(v);
+      });
+
+      // לידים מליוויים לפי created_at
+      const leadsFromCoaching = (mondayData.coaching || []).filter(i => {
+        return inRange(i.created_at);
+      });
+
+      // איחוד — מניעת כפילויות לפי שם
+      const seenNames = new Set(leadsFromBoard.map(i => i.name.trim().toLowerCase()));
+      leadsFromStepup.forEach(i => {
+        const n = i.name.trim().toLowerCase();
+        if (!seenNames.has(n)) { seenNames.add(n); leadsFromBoard.push(i); }
+      });
+      leadsFromSales.forEach(i => {
+        const n = i.name.trim().toLowerCase();
+        if (!seenNames.has(n)) { seenNames.add(n); leadsFromBoard.push(i); }
+      });
+      leadsFromCoaching.forEach(i => {
+        const n = i.name.trim().toLowerCase();
+        if (!seenNames.has(n)) { seenNames.add(n); leadsFromBoard.push(i); }
+      });
+
+      const leads = leadsFromBoard;
 
       // STEP-UP מאנדיי — לפי date4 (להשוואת חודשים)
       const stepupMonday = (mondayData.stepup || []).filter(i => {
