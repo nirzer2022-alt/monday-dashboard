@@ -680,7 +680,7 @@ const server = http.createServer(async (req, res) => {
         const hasBooked = BOOKED_STATUSES.includes(status);
         if (callStatus === 'לא טופל' && hasBooked) callStatus = 'נקבעה שיחה';
         // אם סטטוס מאנדיי מעיד על טיפול — עדכן
-        const mondayStatus = gv(lead, 'lead_status') || '';
+        const mondayStatus = gv(item, 'lead_status') || '';
         if (['לא רלוונטי', 'לא נמכר', 'נמכר ליווי', 'פגישת StepUp', 'נקבעה שיחה', 'רלוונטי-העבר למכירות', 'פולאו-אפ'].includes(mondayStatus)) {
           if (callStatus === 'לא טופל') callStatus = 'טופל';
         }
