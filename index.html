@@ -483,7 +483,17 @@ async function cmp(){
 
 // ── תקשורת ────────────────────────────────────────────────────────────────
 var commDays=14;
-function setCommFilter(s){window._commStatusFilter=s;commTab();}
+function setCommFilter(s){
+  if (s === 'הכל') { window._commStatusFilter = ['הכל']; commTab(); return; }
+  var cur = window._commStatusFilter || ['הכל'];
+  cur = cur.filter(function(x){return x !== 'הכל';});
+  var idx = cur.indexOf(s);
+  if (idx >= 0) cur.splice(idx, 1);
+  else cur.push(s);
+  if (cur.length === 0) cur = ['הכל'];
+  window._commStatusFilter = cur;
+  commTab();
+}
 async function commTab(days){
   if(days)commDays=days;
   document.getElementById('content').innerHTML='<div style="text-align:center;padding:30px;color:#6b7280">טוען נתוני תקשורת...</div>';
@@ -511,8 +521,8 @@ async function commTab(days){
     // פילטר סטטוס
     // פילטר סטטוס
     const allStatuses = ['הכל','לא טופל','נקבעה שיחה','לא ענה','שיחה קצרה','פספסנו','טופל'];
-    const commStatusFilter = window._commStatusFilter || 'הכל';
-    const filteredLeads = commStatusFilter === 'הכל' ? leads : leads.filter(function(l){return l.callStatus === commStatusFilter;});
+    const commStatusFilter = window._commStatusFilter || ['הכל'];
+    const filteredLeads = commStatusFilter.includes('הכל') ? leads : leads.filter(function(l){return commStatusFilter.includes(l.callStatus);});
 
     let html=
       '<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">'+
@@ -523,7 +533,7 @@ async function commTab(days){
       '</div>'+
       '<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">'+
       allStatuses.map(function(s){
-        var active = commStatusFilter===s ? 'background:#2563eb;color:#fff;border-color:#2563eb' : '';
+        var active = commStatusFilter.includes(s) ? 'background:#2563eb;color:#fff;border-color:#2563eb' : '';
         return '<button class="btn" style="'+active+'" onclick="setCommFilter(\'' + s + '\')">' + s + '</button>';
       }).join('')+
       '</div>'+
