@@ -681,7 +681,10 @@ const server = http.createServer(async (req, res) => {
         if (callStatus === 'לא טופל' && hasBooked) callStatus = 'נקבעה שיחה';
         // אם סטטוס מאנדיי מעיד על טיפול — עדכן
         const mondayStatus = gv('lead_status') || '';
-        if (['לא רלוונטי', 'לא נמכר', 'נמכר ליווי', 'פגישת StepUp', 'נקבעה שיחה', 'רלוונטי-העבר למכירות', 'פולאו-אפ'].includes(mondayStatus)) {
+        // "לא רלוונטי" / "לא נמכר" = סיום טיפול — דורס כל סטטוס אחר (גם שיחה קצרה/לא ענה)
+        if (['לא רלוונטי', 'לא נמכר'].includes(mondayStatus)) {
+          callStatus = 'טופל';
+        } else if (['נמכר ליווי', 'פגישת StepUp', 'נקבעה שיחה', 'רלוונטי-העבר למכירות', 'פולאו-אפ'].includes(mondayStatus)) {
           if (callStatus === 'לא טופל') callStatus = 'טופל';
         }
 
