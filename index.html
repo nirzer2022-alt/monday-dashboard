@@ -529,11 +529,11 @@ async function commTab(days){
       '</div>'+
       '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px">'+
       '<div class="mc"><div class="mc-label">סה"כ לידים</div><div class="mc-value c-blue">'+total+'</div></div>'+
-      '<div class="mc"><div class="mc-label">לא טופל</div><div class="mc-value" style="color:#6b7280">'+notHandled+'</div></div>'+
-      '<div class="mc"><div class="mc-label">נקבעה שיחה</div><div class="mc-value c-blue">'+booked+'</div></div>'+
-      '<div class="mc"><div class="mc-label">לא ענה</div><div class="mc-value" style="color:#dc2626">'+noAnswer+'</div></div>'+
-      '<div class="mc"><div class="mc-label">פספסנו</div><div class="mc-value" style="color:#dc2626">'+missed+'</div></div>'+
-      '<div class="mc"><div class="mc-label">טופל</div><div class="mc-value c-green">'+handled+'</div></div>'+
+      '<div class="mc"><div class="mc-label">לא טופל</div><div class="mc-value" style="color:#6b7280">'+notHandled+'</div><div style="font-size:11px;color:#9ca3af">'+(total>0?Math.round(notHandled/total*100):0)+'%</div></div>'+
+      '<div class="mc"><div class="mc-label">נקבעה שיחה</div><div class="mc-value c-blue">'+booked+'</div><div style="font-size:11px;color:#9ca3af">'+(total>0?Math.round(booked/total*100):0)+'%</div></div>'+
+      '<div class="mc"><div class="mc-label">לא ענה</div><div class="mc-value" style="color:#dc2626">'+noAnswer+'</div><div style="font-size:11px;color:#9ca3af">'+(total>0?Math.round(noAnswer/total*100):0)+'%</div></div>'+
+      '<div class="mc"><div class="mc-label">פספסנו</div><div class="mc-value" style="color:#dc2626">'+missed+'</div><div style="font-size:11px;color:#9ca3af">'+(total>0?Math.round(missed/total*100):0)+'%</div></div>'+
+      '<div class="mc"><div class="mc-label">טופל</div><div class="mc-value c-green">'+handled+'</div><div style="font-size:11px;color:#9ca3af">'+(total>0?Math.round(handled/total*100):0)+'%</div></div>'+
       '</div>'+
       '<div class="card"><div class="card-title">מעקב טיפול בליד נכנס</div>'+
       '<table><tr><th>שם</th><th>טלפון</th><th>תאריך פנייה</th><th>מקור</th>'+
