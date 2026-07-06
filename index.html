@@ -462,22 +462,48 @@ async function cmp(){
     }
   }));
 
-  const mx=Math.max.apply(null,results.map(function(d){return d.c;}))||1;
-  const cols=Math.min(results.length,3);
-  let h='<div class="months-grid" style="grid-template-columns:repeat('+cols+',1fr)">';
-  results.forEach(function(d){
-    const cv=d.c>0?Math.round(d.sold/d.c*100):0;
-    const bw=Math.round(d.c/mx*100);
+  // אחוזים מחושבים מתוך סך הפונים (קשר) של אותו חודש
+  const pct=function(n,d){return d>0?Math.round(n/d*100):0;};
+  const rows=results.slice().reverse();  // מהחדש לישן
+  const tot=results.reduce(function(a,d){return{c:a.c+d.c,a:a.a+d.a,su:a.su+d.su,sold:a.sold+d.sold};},{c:0,a:0,su:0,sold:0});
+
+  const cell=function(val,p,color){
+    return '<td style="text-align:center;padding:10px 8px">'+
+      '<span style="font-size:16px;font-weight:700;color:'+color+'">'+val+'</span>'+
+      '<div style="font-size:10px;color:#9ca3af">'+p+'%</div></td>';
+  };
+
+  let h='<div style="font-size:12px;color:var(--text2);margin-bottom:10px">האחוזים מחושבים מתוך סך הפונים (קשר) של אותו חודש.</div>'+
+    '<div class="card" style="padding:0;overflow-x:auto">'+
+    '<table dir="rtl" style="width:100%"><tr>'+
+    '<th style="text-align:right;padding:10px 14px">חודש</th>'+
+    '<th style="text-align:center;padding:10px 8px">קשר</th>'+
+    '<th style="text-align:center;padding:10px 8px">ייעוץ</th>'+
+    '<th style="text-align:center;padding:10px 8px">STEP-UP</th>'+
+    '<th style="text-align:center;padding:10px 8px">ליווי</th></tr>';
+
+  rows.forEach(function(d){
     const ed=d.m===now.getMonth()?fd(now):fd(d.e);
-    h+='<div class="month-card"><div class="month-header"><span class="month-name">'+d.name+'</span><span class="month-dates">'+fd(d.s)+' — '+ed+'</span></div>'+
-      '<div class="month-metrics">'+
-      '<div><div class="month-metric-val c-blue">'+d.c+'</div><div class="month-metric-lbl">קשר</div></div>'+
-      '<div><div class="month-metric-val c-green">'+d.a+'</div><div class="month-metric-lbl">ייעוץ</div></div>'+
-      '<div><div class="month-metric-val c-amber">'+d.su+'</div><div class="month-metric-lbl">STEP-UP</div></div>'+
-      '<div><div class="month-metric-val c-purple">'+d.sold+' <span style="font-size:11px">'+cv+'%</span></div><div class="month-metric-lbl">ליווי</div></div>'+
-      '</div><div class="src-bar-wrap" style="margin-top:8px"><div class="src-bar" style="width:'+bw+'%;background:#2563eb"></div></div></div>';
+    h+='<tr>'+
+      '<td style="padding:10px 14px"><div style="font-weight:700;font-size:14px">'+d.name+'</div>'+
+      '<div style="font-size:10px;color:var(--text3)">'+fd(d.s)+' — '+ed+'</div></td>'+
+      '<td style="text-align:center;padding:10px 8px"><span style="font-size:18px;font-weight:700;color:#2563eb">'+d.c+'</span></td>'+
+      cell(d.a,pct(d.a,d.c),'#16a34a')+
+      cell(d.su,pct(d.su,d.c),'#d97706')+
+      cell(d.sold,pct(d.sold,d.c),'#7c3aed')+
+      '</tr>';
   });
-  document.getElementById('content').innerHTML=h+'</div>';
+
+  h+='<tr style="border-top:2px solid var(--border);background:var(--bg3)">'+
+    '<td style="padding:10px 14px;font-weight:700">סה"כ</td>'+
+    '<td style="text-align:center;padding:10px 8px;font-size:18px;font-weight:700;color:#2563eb">'+tot.c+'</td>'+
+    cell(tot.a,pct(tot.a,tot.c),'#16a34a')+
+    cell(tot.su,pct(tot.su,tot.c),'#d97706')+
+    cell(tot.sold,pct(tot.sold,tot.c),'#7c3aed')+
+    '</tr>';
+
+  h+='</table></div>';
+  document.getElementById('content').innerHTML=h;
 }
 
 // ── תקשורת ────────────────────────────────────────────────────────────────
