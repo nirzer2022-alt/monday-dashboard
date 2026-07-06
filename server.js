@@ -143,6 +143,7 @@ async function getAllData() {
         if (!i.column_values?.find(c => c.id === 'date_mm00ds06' && c.text)) {
           i.column_values = i.column_values || [];
           i.column_values.push({ id: 'date_mm00ds06', text: i.created_at?.slice(0,16).replace('T',' ') || '' });
+          i._approxDate = true;  // תאריך פנייה משוער (created_at) — לא נספר בהשוואה החודשית
         }
         data.leads.push(i);
       }
@@ -510,6 +511,7 @@ const server = http.createServer(async (req, res) => {
       // לידים — לפי date_mm00ds06
       // לידים מבורד לידים לפי date_mm00ds06
       const leadsFromBoard = (mondayData.leads || []).filter(i => {
+        if (i._approxDate) return false;  // דלג על לידים עם תאריך משוער — נספרים רק תאריכי פנייה אמיתיים
         const v = gv(i, 'date_mm00ds06');
         return v && inRange(v);
       });
