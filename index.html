@@ -466,8 +466,7 @@ async function cmp(){
   const cols=Math.min(results.length,3);
   let h='<div class="months-grid" style="grid-template-columns:repeat('+cols+',1fr)">';
   results.forEach(function(d){
-    const soldCount=soldBS[s.key]||0;
-    const cv=d.c>0?Math.round(soldCount/d.c*100):0;
+    const cv=d.c>0?Math.round(d.sold/d.c*100):0;
     const bw=Math.round(d.c/mx*100);
     const ed=d.m===now.getMonth()?fd(now):fd(d.e);
     h+='<div class="month-card"><div class="month-header"><span class="month-name">'+d.name+'</span><span class="month-dates">'+fd(d.s)+' — '+ed+'</span></div>'+
