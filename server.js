@@ -625,13 +625,47 @@ const server = http.createServer(async (req, res) => {
         }
       }`;
 
-      const mondayRes = await fetchMonday(leadsQuery);
+      const salesQueryComm = `{
+        boards(ids: 9949694887) {
+          items_page(limit: 500) {
+            items {
+              id name created_at
+              column_values(ids: ["deal_stage","date_mm00jx0c","color_mkvdnz23","phone_mkvd9az"]) { id text }
+            }
+          }
+        }
+      }`;
+      const [mondayRes, salesResComm] = await Promise.all([
+        fetchMonday(leadsQuery),
+        fetchMonday(salesQueryComm),
+      ]);
       const urlComm = new URL(req.url, 'http://localhost');
       const days = parseInt(urlComm.searchParams.get('days') || '60');
       const sinceDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
       const groups = mondayRes.data?.boards?.[0]?.groups || [];
-      const items = groups.flatMap(g => g.items_page?.items || []);
+      const leadItems = groups.flatMap(g => g.items_page?.items || []);
+      const leadNames = new Set(leadItems.map(i => i.name.trim().toLowerCase()));
+
+      // אנשי מכירות שלא קיימים בלידים — ממיר לפורמט תואם
+      const salesItemsComm = (salesResComm.data?.boards?.[0]?.items_page?.items || [])
+        .filter(i => !leadNames.has(i.name.trim().toLowerCase()))
+        .map(i => {
+          const gvS = (col) => i.column_values?.find(c => c.id === col)?.text || '';
+          return {
+            ...i,
+            _fromSales: true,
+            column_values: [
+              { id: 'lead_status', text: gvS('deal_stage') },
+              { id: 'date_mm00ds06', text: gvS('date_mm00jx0c') || i.created_at?.slice(0,10) },
+              { id: 'color_mkvd5y1g', text: gvS('color_mkvdnz23') },
+              { id: 'lead_phone', text: gvS('phone_mkvd9az') },
+            ],
+            updates: [],
+          };
+        });
+
+      const items = [...leadItems, ...salesItemsComm];
 
       const leadsRaw = items.map(item => {
         const gv = (col) => item.column_values?.find(c => c.id === col)?.text || '';
