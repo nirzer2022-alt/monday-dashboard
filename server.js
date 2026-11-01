@@ -768,9 +768,10 @@ const server = http.createServer(async (req, res) => {
       }`;
       const salesQuery = `{
         boards(ids: 9949694887) {
-          groups(ids: ["group_mm00znzx", "new_group29179"]) {
-            items_page(limit: 500) {
-              items { name column_values(ids: ["deal_stage","date_mm00jx0c"]) { id text } }
+          items_page(limit: 500) {
+            items {
+              id name created_at
+              column_values(ids: ["deal_stage","date_mm00jx0c","color_mkvdnz23","phone_mkvd9az"]) { id text }
             }
           }
         }
@@ -815,7 +816,7 @@ const server = http.createServer(async (req, res) => {
         ]
       }));
 
-      const leads = [...leadsFiltered, ...stepupOnlyItems];
+      const leads = [...leadsFiltered, ...stepupOnlyItems, ...salesOnlyItems];
 
       // בנה מפות שם → נתונים
       const stepupMap = {}; // שם מלא בלבד — מניעת התאמה שגויה לפי שם פרטי
@@ -826,14 +827,32 @@ const server = http.createServer(async (req, res) => {
       });
 
       // מכירות מבורד מכירות
-      const salesGroups = salesRes.data?.boards?.[0]?.groups || [];
-      const salesItems = salesGroups.flatMap(g => g.items_page?.items || []);
+      const salesItems = salesRes.data?.boards?.[0]?.items_page?.items || [];
       const salesMap = {}; // שם מלא בלבד — מניעת התאמה שגויה לפי שם פרטי
       salesItems.forEach(item => {
         const d = gv(item, 'date_mm00jx0c');
         const stage = gv(item, 'deal_stage');
         salesMap[item.name.trim().toLowerCase()] = { date: d ? new Date(d) : null, stage, name: item.name };
       });
+
+      // הוסף אנשי מכירות שלא קיימים בלוח הלידים
+      const existingNamesForSales = new Set([...leadsFiltered, ...stepupOnlyItems].map(i => i.name.trim().toLowerCase()));
+      const salesOnlyItems = salesItems.filter(item => {
+        const nameL = item.name.trim().toLowerCase();
+        if (existingNamesForSales.has(nameL)) return false;
+        const d = gv(item, 'date_mm00jx0c');
+        const date = d ? new Date(d) : new Date(item.created_at);
+        return date >= timeMin && date <= timeMax;
+      }).map(item => ({
+        ...item,
+        _fromSales: true,
+        column_values: [
+          ...item.column_values,
+          { id: 'date_mm00ds06', text: gv(item, 'date_mm00jx0c') || item.created_at?.slice(0,10) },
+          { id: 'color_mkvd5y1g', text: gv(item, 'color_mkvdnz23') },
+          { id: 'lead_phone', text: gv(item, 'phone_mkvd9az') },
+        ]
+      }));
       // מכירות מבורד STEP-UP (קבוצת נמכר ליווי) — רק אם לא קיים כבר מבורד מכירות
       const stepupSoldItems = stepupSoldRes.data?.boards?.[0]?.groups?.[0]?.items_page?.items || [];
       stepupSoldItems.forEach(item => {
@@ -912,6 +931,7 @@ const server = http.createServer(async (req, res) => {
           stepup: su ? su.date?.toLocaleDateString('he-IL') : null,
           sold,
           saleDate: sale?.date?.toLocaleDateString('he-IL') || null,
+          fromSales: !!item._fromSales,
         };
       });
 
