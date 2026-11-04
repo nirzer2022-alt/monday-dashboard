@@ -655,16 +655,32 @@ const server = http.createServer(async (req, res) => {
       const leadItemsRaw = groups.flatMap(g => g.items_page?.items || []);
 
       // סנן החוצה מי שנמצא כבר בלוח StepUp — הם לא "נקבעה שיחה" אלא שלב הבא
-      const stepupNamesComm = new Set(
-        (stepupResComm.data?.boards?.[0]?.items_page?.items || [])
-          .map(i => i.name.trim().toLowerCase())
+      // השוואה גמישה: שם מלא OR שם פרטי+שם משפחה ראשון (מונע אי-התאמה בגלל איות שונה)
+      const stepupItemsForComm = stepupResComm.data?.boards?.[0]?.items_page?.items || [];
+      const stepupFullNames = new Set(stepupItemsForComm.map(i => i.name.trim().toLowerCase()));
+      const stepupFirstLastNames = new Set(
+        stepupItemsForComm.map(i => {
+          const parts = i.name.trim().toLowerCase().split(/\s+/);
+          return parts.slice(0, 2).join(' '); // שם פרטי + שם משפחה ראשון
+        })
       );
-      const leadItems = leadItemsRaw.filter(i => !stepupNamesComm.has(i.name.trim().toLowerCase()));
+      const leadItems = leadItemsRaw.filter(i => {
+        const full = i.name.trim().toLowerCase();
+        const firstLast = full.split(/\s+/).slice(0, 2).join(' ');
+        return !stepupFullNames.has(full) && !stepupFirstLastNames.has(firstLast);
+      });
       const leadNames = new Set(leadItems.map(i => i.name.trim().toLowerCase()));
 
       // אנשי מכירות שלא קיימים בלידים — ממיר לפורמט תואם
+      // סטטוסים שמעידים שהאדם כבר עבר שלב — לא צריך להופיע בתקשורת
+      const SALES_ADVANCED_STATUSES = ['פגישת StepUp', 'נמכר ליווי', 'נמכר'];
       const salesItemsComm = (salesResComm.data?.boards?.[0]?.items_page?.items || [])
-        .filter(i => !leadNames.has(i.name.trim().toLowerCase()))
+        .filter(i => {
+          if (leadNames.has(i.name.trim().toLowerCase())) return false;
+          const stage = i.column_values?.find(c => c.id === 'deal_stage')?.text || '';
+          if (SALES_ADVANCED_STATUSES.includes(stage)) return false; // כבר עבר הלאה
+          return true;
+        })
         .map(i => {
           const gvS = (col) => i.column_values?.find(c => c.id === col)?.text || '';
           return {
