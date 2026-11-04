@@ -635,16 +635,31 @@ const server = http.createServer(async (req, res) => {
           }
         }
       }`;
-      const [mondayRes, salesResComm] = await Promise.all([
+      const stepupQueryComm = `{
+        boards(ids: 9950584665) {
+          items_page(limit: 500) {
+            items { id name }
+          }
+        }
+      }`;
+      const [mondayRes, salesResComm, stepupResComm] = await Promise.all([
         fetchMonday(leadsQuery),
         fetchMonday(salesQueryComm),
+        fetchMonday(stepupQueryComm),
       ]);
       const urlComm = new URL(req.url, 'http://localhost');
       const days = parseInt(urlComm.searchParams.get('days') || '60');
       const sinceDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
       const groups = mondayRes.data?.boards?.[0]?.groups || [];
-      const leadItems = groups.flatMap(g => g.items_page?.items || []);
+      const leadItemsRaw = groups.flatMap(g => g.items_page?.items || []);
+
+      // סנן החוצה מי שנמצא כבר בלוח StepUp — הם לא "נקבעה שיחה" אלא שלב הבא
+      const stepupNamesComm = new Set(
+        (stepupResComm.data?.boards?.[0]?.items_page?.items || [])
+          .map(i => i.name.trim().toLowerCase())
+      );
+      const leadItems = leadItemsRaw.filter(i => !stepupNamesComm.has(i.name.trim().toLowerCase()));
       const leadNames = new Set(leadItems.map(i => i.name.trim().toLowerCase()));
 
       // אנשי מכירות שלא קיימים בלידים — ממיר לפורמט תואם
