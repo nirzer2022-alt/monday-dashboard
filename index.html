@@ -541,17 +541,12 @@ async function commTab(days){
       'לא ידוע':'background:#f3f4f6;color:#6b7280',
     };
     const btnStyle=(d)=>commDays===d?'background:#2563eb;color:#fff;border-color:#2563eb':'';
-    // פילטר מקור (לידים / מכירות / הכל)
-    const allSources = ['הכל','לידים','מכירות'];
-    const commSourceFilter = window._commSourceFilter || 'הכל';
-    const sourceFilteredLeads = commSourceFilter === 'לידים' ? leads.filter(l => !l.fromSales)
-      : commSourceFilter === 'מכירות' ? leads.filter(l => l.fromSales)
-      : leads;
-
-    // פילטר סטטוס
-    const allStatuses = ['הכל','לא טופל','נקבעה שיחה','לא ענה','שיחה קצרה','פספסנו','טופל'];
+    // פילטר סטטוס — כולל "מכירות" כסינון מקור
+    const allStatuses = ['הכל','לא טופל','נקבעה שיחה','לא ענה','שיחה קצרה','פספסנו','טופל','מכירות'];
     const commStatusFilter = window._commStatusFilter || ['הכל'];
-    const filteredLeads = commStatusFilter.includes('הכל') ? sourceFilteredLeads : sourceFilteredLeads.filter(function(l){return commStatusFilter.includes(l.callStatus);});
+    const filteredLeads = commStatusFilter.includes('הכל') ? leads
+      : commStatusFilter.includes('מכירות') ? leads.filter(function(l){return l.fromSales;})
+      : leads.filter(function(l){return commStatusFilter.includes(l.callStatus);});
 
     let html=
       '<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">'+
@@ -559,12 +554,6 @@ async function commTab(days){
       '<button class="btn" style="'+btnStyle(14)+'" onclick="commTab(14)">שבועיים</button>'+
       '<button class="btn" style="'+btnStyle(30)+'" onclick="commTab(30)">חודש אחרון</button>'+
       '<button class="btn" style="'+btnStyle(60)+'" onclick="commTab(60)">60 יום</button>'+
-      '</div>'+
-      '<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">'+
-      allSources.map(function(s){
-        var active = commSourceFilter === s ? 'background:#7c3aed;color:#fff;border-color:#7c3aed' : '';
-        return '<button class="btn" style="'+active+'" onclick="setCommSource(\'' + s + '\')">' + s + '</button>';
-      }).join('')+
       '</div>'+
       '<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">'+
       allStatuses.map(function(s){
@@ -585,8 +574,11 @@ async function commTab(days){
       '<th style="text-align:center">שיחות</th><th>שיחה אחרונה</th><th style="text-align:center">סטטוס</th></tr>';
     filteredLeads.forEach(function(l){
       var sc=statusColor[l.callStatus]||'';
+      var nameCell = l.fromSales
+        ? '<span style="font-weight:600">'+l.name+'</span> <span class="badge" style="background:#ede9fe;color:#7c3aed;font-size:10px">מכירות</span>'
+        : '<span style="font-weight:600">'+l.name+'</span>';
       html+='<tr>'+
-        '<td style="font-weight:600">'+l.name+'</td>'+
+        '<td>'+nameCell+'</td>'+
         '<td style="color:var(--text2);direction:ltr;text-align:right">'+(l.phone||'—')+'</td>'+
         '<td style="color:var(--text2)">'+l.leadDate+'</td>'+
         '<td><span class="badge" style="background:#dbeafe;color:#1d4ed8">'+(l.source||'—')+'</span></td>'+
