@@ -574,17 +574,17 @@ async function commTab(days){
       '<th style="text-align:center">שיחות</th><th>שיחה אחרונה</th><th style="text-align:center">סטטוס</th></tr>';
     filteredLeads.forEach(function(l){
       var sc=statusColor[l.callStatus]||'';
-      var nameCell = l.fromSales
-        ? '<span style="font-weight:600">'+l.name+'</span> <span class="badge" style="background:#ede9fe;color:#7c3aed;font-size:10px">מכירות</span>'
-        : '<span style="font-weight:600">'+l.name+'</span>';
+      var statusCell = l.fromSales
+        ? '<span class="badge" style="background:#ede9fe;color:#7c3aed">מכירות</span>'
+        : '<span class="badge" style="'+sc+'">'+l.callStatus+'</span>';
       html+='<tr>'+
-        '<td>'+nameCell+'</td>'+
+        '<td style="font-weight:600">'+l.name+'</td>'+
         '<td style="color:var(--text2);direction:ltr;text-align:right">'+(l.phone||'—')+'</td>'+
         '<td style="color:var(--text2)">'+l.leadDate+'</td>'+
         '<td><span class="badge" style="background:#dbeafe;color:#1d4ed8">'+(l.source||'—')+'</span></td>'+
         '<td style="text-align:center;font-weight:700">'+l.callCount+'</td>'+
         '<td style="color:var(--text2)">'+(l.lastCallDate||'—')+'</td>'+
-        '<td style="text-align:center"><span class="badge" style="'+sc+'">'+l.callStatus+'</span></td></tr>';
+        '<td style="text-align:center">'+statusCell+'</td></tr>';
     });
     html+='</table></div>';
     document.getElementById('content').innerHTML=html;
