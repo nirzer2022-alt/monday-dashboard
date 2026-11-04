@@ -505,6 +505,7 @@ async function cmp(){
 
 // ── תקשורת ────────────────────────────────────────────────────────────────
 var commDays=14;
+function setCommSource(s){ window._commSourceFilter = s; commTab(); }
 function setCommFilter(s){
   if (s === 'הכל') { window._commStatusFilter = ['הכל']; commTab(); return; }
   var cur = window._commStatusFilter || ['הכל'];
@@ -540,11 +541,17 @@ async function commTab(days){
       'לא ידוע':'background:#f3f4f6;color:#6b7280',
     };
     const btnStyle=(d)=>commDays===d?'background:#2563eb;color:#fff;border-color:#2563eb':'';
-    // פילטר סטטוס
+    // פילטר מקור (לידים / מכירות / הכל)
+    const allSources = ['הכל','לידים','מכירות'];
+    const commSourceFilter = window._commSourceFilter || 'הכל';
+    const sourceFilteredLeads = commSourceFilter === 'לידים' ? leads.filter(l => !l.fromSales)
+      : commSourceFilter === 'מכירות' ? leads.filter(l => l.fromSales)
+      : leads;
+
     // פילטר סטטוס
     const allStatuses = ['הכל','לא טופל','נקבעה שיחה','לא ענה','שיחה קצרה','פספסנו','טופל'];
     const commStatusFilter = window._commStatusFilter || ['הכל'];
-    const filteredLeads = commStatusFilter.includes('הכל') ? leads : leads.filter(function(l){return commStatusFilter.includes(l.callStatus);});
+    const filteredLeads = commStatusFilter.includes('הכל') ? sourceFilteredLeads : sourceFilteredLeads.filter(function(l){return commStatusFilter.includes(l.callStatus);});
 
     let html=
       '<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">'+
@@ -552,6 +559,12 @@ async function commTab(days){
       '<button class="btn" style="'+btnStyle(14)+'" onclick="commTab(14)">שבועיים</button>'+
       '<button class="btn" style="'+btnStyle(30)+'" onclick="commTab(30)">חודש אחרון</button>'+
       '<button class="btn" style="'+btnStyle(60)+'" onclick="commTab(60)">60 יום</button>'+
+      '</div>'+
+      '<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">'+
+      allSources.map(function(s){
+        var active = commSourceFilter === s ? 'background:#7c3aed;color:#fff;border-color:#7c3aed' : '';
+        return '<button class="btn" style="'+active+'" onclick="setCommSource(\'' + s + '\')">' + s + '</button>';
+      }).join('')+
       '</div>'+
       '<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">'+
       allStatuses.map(function(s){
