@@ -627,10 +627,13 @@ const server = http.createServer(async (req, res) => {
 
       const salesQueryComm = `{
         boards(ids: 9949694887) {
-          items_page(limit: 500) {
-            items {
-              id name created_at
-              column_values(ids: ["deal_stage","date_mm00jx0c","color_mkvdnz23","phone_mkvd9az"]) { id text }
+          groups(ids: ["topics"]) {
+            items_page(limit: 500) {
+              items {
+                id name created_at
+                column_values(ids: ["deal_stage","date_mm00jx0c","color_mkvdnz23","phone_mkvd9az"]) { id text }
+                updates(limit: 20) { id body created_at }
+              }
             }
           }
         }
@@ -671,16 +674,10 @@ const server = http.createServer(async (req, res) => {
       });
       const leadNames = new Set(leadItems.map(i => i.name.trim().toLowerCase()));
 
-      // אנשי מכירות שלא קיימים בלידים — ממיר לפורמט תואם
-      // סטטוסים שמעידים שהאדם כבר עבר שלב — לא צריך להופיע בתקשורת
-      const SALES_ADVANCED_STATUSES = ['פגישת StepUp', 'נמכר ליווי', 'נמכר'];
-      const salesItemsComm = (salesResComm.data?.boards?.[0]?.items_page?.items || [])
-        .filter(i => {
-          if (leadNames.has(i.name.trim().toLowerCase())) return false;
-          const stage = i.column_values?.find(c => c.id === 'deal_stage')?.text || '';
-          if (SALES_ADVANCED_STATUSES.includes(stage)) return false; // כבר עבר הלאה
-          return true;
-        })
+      // אנשי מכירות — גרופ "ליד חדש" בלוח המכירות, שלא קיימים כבר בלידים
+      const salesRawItems = salesResComm.data?.boards?.[0]?.groups?.[0]?.items_page?.items || [];
+      const salesItemsComm = salesRawItems
+        .filter(i => !leadNames.has(i.name.trim().toLowerCase()))
         .map(i => {
           const gvS = (col) => i.column_values?.find(c => c.id === col)?.text || '';
           return {
@@ -692,7 +689,7 @@ const server = http.createServer(async (req, res) => {
               { id: 'color_mkvd5y1g', text: gvS('color_mkvdnz23') },
               { id: 'lead_phone', text: gvS('phone_mkvd9az') },
             ],
-            updates: [],
+            updates: i.updates || [],
           };
         });
 
@@ -761,12 +758,13 @@ const server = http.createServer(async (req, res) => {
           status,
           source,
           leadDate: leadDate.toLocaleDateString('he-IL'),
-          leadDateRaw: leadDate.getTime(), // FIX: שמור timestamp לצורך מיון אמין
+          leadDateRaw: leadDate.getTime(),
           phone,
           callCount,
           callStatus,
           lastCallDate,
           hasBooked,
+          fromSales: !!item._fromSales,
         };
       });
 
