@@ -674,9 +674,22 @@ const server = http.createServer(async (req, res) => {
       });
       const leadNames = new Set(leadItems.map(i => i.name.trim().toLowerCase()));
 
-      // אנשי מכירות — גרופ "ליד חדש" בלוח המכירות, שלא קיימים כבר בלידים
+      // שמות אנשים בלוח המכירות — לסימון תג "מכירות" על לידים קיימים
       const salesRawItems = salesResComm.data?.boards?.[0]?.groups?.[0]?.items_page?.items || [];
-      const salesItemsComm = salesRawItems
+      const salesNames = new Set(salesRawItems.map(i => i.name.trim().toLowerCase()));
+      // גם השוואה לפי שם פרטי+משפחה (למקרה של "קרן" vs "קרן כהן")
+      const salesFirstNames = new Set(salesRawItems.map(i => i.name.trim().toLowerCase().split(/\s+/)[0]));
+
+      // סמן לידים קיימים שנמצאים גם במכירות — תג "מכירות"
+      const leadItemsTagged = leadItems.map(i => {
+        const full = i.name.trim().toLowerCase();
+        const first = full.split(/\s+/)[0];
+        const inSales = salesNames.has(full) || salesFirstNames.has(first);
+        return inSales ? { ...i, _fromSales: true } : i;
+      });
+
+      // אנשי מכירות שלא קיימים כלל בלידים — הוסף אותם
+      const salesOnlyItems = salesRawItems
         .filter(i => !leadNames.has(i.name.trim().toLowerCase()))
         .map(i => {
           const gvS = (col) => i.column_values?.find(c => c.id === col)?.text || '';
@@ -693,7 +706,7 @@ const server = http.createServer(async (req, res) => {
           };
         });
 
-      const items = [...leadItems, ...salesItemsComm];
+      const items = [...leadItemsTagged, ...salesOnlyItems];
 
       const leadsRaw = items.map(item => {
         const gv = (col) => item.column_values?.find(c => c.id === col)?.text || '';
