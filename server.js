@@ -712,7 +712,7 @@ const server = http.createServer(async (req, res) => {
         const gv = (col) => item.column_values?.find(c => c.id === col)?.text || '';
         const dateStr = gv('date_mm00ds06');
         const leadDate = dateStr ? new Date(dateStr) : new Date(item.created_at);
-        if (leadDate < sinceDate) return null;
+        const isOutOfRange = leadDate < sinceDate;
         const status = gv('lead_status');
         const source = gv('color_mkvd5y1g');
         const phone = gv('lead_phone');
@@ -729,6 +729,17 @@ const server = http.createServer(async (req, res) => {
         let callStatus = 'לא טופל';
         let lastCallDate = null;
         let callCount = callUpdates.length;
+
+        // פעילות אחרונה = כל עדכון (שיחה או הערה ידנית)
+        const allUpdates = (item.updates || []).filter(u => u.body);
+        allUpdates.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        const lastAnyUpdate = allUpdates[0];
+        const lastActivityDate = lastAnyUpdate
+          ? new Date(lastAnyUpdate.created_at).toLocaleDateString('he-IL')
+          : null;
+        const lastNote = lastAnyUpdate && !callUpdates.includes(lastAnyUpdate)
+          ? lastAnyUpdate.body.slice(0, 60)
+          : null;
 
         if (callUpdates.length > 0) {
           callUpdates.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -765,6 +776,12 @@ const server = http.createServer(async (req, res) => {
           if (callStatus === 'לא טופל') callStatus = 'טופל';
         }
 
+        // ליד מחוץ לטווח: אם כבר טופל — הסתר. אם לא טופל — הצג כ"פספסנו"
+        if (isOutOfRange) {
+          if (callStatus !== 'לא טופל') return null;
+          callStatus = 'פספסנו';
+        }
+
         return {
           id: item.id,
           name: item.name,
@@ -775,7 +792,8 @@ const server = http.createServer(async (req, res) => {
           phone,
           callCount,
           callStatus,
-          lastCallDate,
+          lastCallDate: lastActivityDate || lastCallDate,
+          lastNote,
           hasBooked,
           fromSales: !!item._fromSales,
         };
