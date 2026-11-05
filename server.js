@@ -738,7 +738,7 @@ const server = http.createServer(async (req, res) => {
           ? new Date(lastAnyUpdate.created_at).toLocaleDateString('he-IL')
           : null;
         const lastNote = lastAnyUpdate && !callUpdates.includes(lastAnyUpdate)
-          ? lastAnyUpdate.body.slice(0, 60)
+          ? lastAnyUpdate.body.slice(0, 120)
           : null;
 
         if (callUpdates.length > 0) {
@@ -776,9 +776,13 @@ const server = http.createServer(async (req, res) => {
           if (callStatus === 'לא טופל') callStatus = 'טופל';
         }
 
-        // ליד מחוץ לטווח: אם כבר טופל — הסתר. אם לא טופל — הצג כ"פספסנו"
+        // ליד מחוץ לטווח: אם כבר טופל — הסתר.
+        // אם לא טופל אבל יש פעילות (שיחות/הערות) — הצג כ"פספסנו" כי ניסו לטפל ולא הסתיים.
+        // אם אין שום פעילות ואין סטטוס — ליד ישן שנשכח ב-Monday, הסתר.
         if (isOutOfRange) {
           if (callStatus !== 'לא טופל') return null;
+          const hasAnyActivity = callCount > 0 || (allUpdates.length > 0);
+          if (!hasAnyActivity) return null;
           callStatus = 'פספסנו';
         }
 
