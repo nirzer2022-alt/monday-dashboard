@@ -611,8 +611,8 @@ const server = http.createServer(async (req, res) => {
   if (req.url?.startsWith('/comm')) {
     try {
       const allLeadGroups = ["topics", "group_mky8hb65", "group_mkvdf40s"]; // הסרנו group_mkvdgh99 = "לא רלוונטי"
-      const cols = ["lead_status", "date_mm00ds06", "color_mkvd5y1g", "lead_phone"];
-      const itemsField = `id name created_at column_values(ids: ["lead_status", "date_mm00ds06", "color_mkvd5y1g", "lead_phone"]) { id text } updates(limit: 20) { id body created_at }`;
+      const cols = ["lead_status", "date_mm00ds06", "pulse_log_mkvd2khb", "color_mkvd5y1g", "lead_phone"];
+      const itemsField = `id name created_at column_values(ids: ["lead_status", "date_mm00ds06", "pulse_log_mkvd2khb", "color_mkvd5y1g", "lead_phone"]) { id text } updates(limit: 20) { id body created_at }`;
       const leadsQuery = `{
         boards(ids: 9949694708) {
           groups(ids: ${JSON.stringify(allLeadGroups)}) {
@@ -710,8 +710,12 @@ const server = http.createServer(async (req, res) => {
 
       const leadsRaw = items.map(item => {
         const gv = (col) => item.column_values?.find(c => c.id === col)?.text || '';
-        const dateStr = gv('date_mm00ds06');
-        const leadDate = dateStr ? new Date(dateStr) : new Date(item.created_at);
+        const dateStrOrig = gv('date_mm00ds06');  // תאריך פניה מקורית
+        const dateStrLog  = gv('pulse_log_mkvd2khb'); // תאריך יצירת הפריט הנוכחי
+        // תמיד נשתמש ב-pulse_log (תאריך הפריט הנוכחי) לקביעת הטווח
+        const leadDate = dateStrLog ? new Date(dateStrLog) : (dateStrOrig ? new Date(dateStrOrig) : new Date(item.created_at));
+        // פניה חוזרת: אם תאריך מקורי קיים ומוקדם ב-7+ ימים מהפריט הנוכחי
+        const _returning = dateStrOrig && dateStrLog && (new Date(dateStrLog) - new Date(dateStrOrig)) > 7 * 24 * 60 * 60 * 1000;
         const isOutOfRange = leadDate < sinceDate;
         const status = gv('lead_status');
         const source = gv('color_mkvd5y1g');
@@ -800,6 +804,7 @@ const server = http.createServer(async (req, res) => {
           lastNote,
           hasBooked,
           fromSales: !!item._fromSales,
+          returning: !!_returning,
         };
       });
 
