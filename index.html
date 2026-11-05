@@ -578,7 +578,7 @@ async function commTab(days){
         ? '<span class="badge" style="background:#ede9fe;color:#7c3aed">מכירות</span>'
         : '<span class="badge" style="'+sc+'">'+l.callStatus+'</span>';
       html+='<tr>'+
-        '<td style="font-weight:600">'+l.name+'</td>'+
+        '<td style="font-weight:600">'+(l.returning?'<span style="background:#fef3c7;color:#92400e;font-size:9px;padding:1px 5px;border-radius:4px;font-weight:600;margin-left:4px">↩ חוזר</span>':'')+l.name+'</td>'+
         '<td style="color:var(--text2);direction:ltr;text-align:right">'+(l.phone||'—')+'</td>'+
         '<td style="color:var(--text2)">'+l.leadDate+'</td>'+
         '<td><span class="badge" style="background:#dbeafe;color:#1d4ed8">'+(l.source||'—')+'</span></td>'+
