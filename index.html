@@ -583,7 +583,7 @@ async function commTab(days){
         '<td style="color:var(--text2)">'+l.leadDate+'</td>'+
         '<td><span class="badge" style="background:#dbeafe;color:#1d4ed8">'+(l.source||'—')+'</span></td>'+
         '<td style="text-align:center;font-weight:700">'+l.callCount+'</td>'+
-        '<td style="color:var(--text2)">'+(l.lastCallDate||'—')+'</td>'+
+        '<td style="color:var(--text2)">'+(l.lastCallDate||'—')+(l.lastNote?'<br><span style="font-size:10px;color:var(--text3)">'+l.lastNote+'</span>':'')+'</td>'+
         '<td style="text-align:center">'+statusCell+'</td></tr>';
     });
     html+='</table></div>';
